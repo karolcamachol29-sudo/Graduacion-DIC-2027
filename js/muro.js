@@ -1153,6 +1153,16 @@ document.addEventListener('DOMContentLoaded', () => {
         scanImg.src = objectUrl;
       }
     } else if (isVideo) {
+      if (file.size > 16 * 1024 * 1024) {
+        showModerationAlert(
+          '⚠️ Video demasiado pesado para la nube',
+          `El video seleccionado pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB. Para que Google Apps Script y Google Drive puedan guardarlo y que todos los compañeros puedan reproducirlo en sus teléfonos sin cortes, el video debe pesar máximo 15 MB. Por favor recórtalo o comprímelo.`
+        );
+        showToast('⚠️ El video debe ser menor a 15 MB para sincronizarse en la nube.');
+        clearFileSelection();
+        return;
+      }
+
       // Video: Vista previa interactiva inmediata con HTML5
       const videoUrl = URL.createObjectURL(file);
       processedDataUrl = videoUrl;
@@ -1363,7 +1373,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       submitBtn.disabled = true;
       progressBox.classList.add('is-active');
-      progressText.textContent = 'Guardando tu recuerdo en el muro...';
+      const isVideo = (processedMimeType || selectedFile.type).startsWith('video/');
+      progressText.textContent = isVideo 
+        ? 'Subiendo video a la nube (puede tardar unos segundos)...' 
+        : 'Subiendo tu recuerdo a la nube...';
 
       // 1. Asegurar lectura de base64 si aún no terminó
       if (!processedBase64) {
@@ -1373,7 +1386,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // 2. Crear registro para persistencia local inmediata (IndexedDB)
-      const isVideo = (processedMimeType || selectedFile.type).startsWith('video/');
       const localId = 'mem-' + Date.now();
       const localUrl = URL.createObjectURL(selectedFile);
 
@@ -1402,21 +1414,10 @@ document.addEventListener('DOMContentLoaded', () => {
       posts.unshift(newPost);
       renderBoard();
 
-      // Cerrar modal de inmediato para una experiencia fluida
-      closeModal();
-      showToast('¡Tu recuerdo ha sido publicado en el muro! 🎉');
+      // 3. Sincronización con Google Apps Script y Google Drive
+      let cloudSynced = false;
+      let cloudError = null;
 
-      // Scroll suave al inicio del muro
-      const boardEl = document.getElementById('muro-board-container');
-      if (boardEl) {
-        const headerHeight = 76;
-        window.scrollTo({
-          top: boardEl.getBoundingClientRect().top + window.pageYOffset - headerHeight - 20,
-          behavior: 'smooth'
-        });
-      }
-
-      // 3. Sincronización en segundo plano con Google Apps Script y Google Drive
       if (processedBase64) {
         const payload = {
           action: 'upload',
@@ -1441,16 +1442,46 @@ document.addEventListener('DOMContentLoaded', () => {
             const resText = await response.text();
             try {
               const resData = JSON.parse(resText);
-              if (resData && resData.fileId) {
-                newPost.fileId = resData.fileId;
-                await updateLocalMemory(newPost.id, { fileId: resData.fileId });
-                console.log('Sincronizado con Google Drive:', resData.fileId);
+              if (resData && (resData.fileId || resData.success)) {
+                cloudSynced = true;
+                if (resData.fileId) {
+                  newPost.fileId = resData.fileId;
+                  await updateLocalMemory(newPost.id, { fileId: resData.fileId });
+                  console.log('Sincronizado con Google Drive exitosamente:', resData.fileId);
+                }
+              } else if (resData && resData.error) {
+                cloudError = resData.error;
+                console.warn('Error devuelto por Apps Script:', resData.error);
               }
-            } catch (_) {}
+            } catch (jsonErr) {
+              console.warn('Respuesta de Google no fue JSON (posible bloqueo de permisos / redirección a login):', jsonErr);
+            }
+          } else {
+            console.warn('Código HTTP de error en Apps Script:', response.status);
           }
         } catch (syncErr) {
-          console.info('El recuerdo se conservó localmente en el dispositivo. Sincronización remota pendiente.');
+          console.warn('Error de red al conectar con Google Apps Script:', syncErr);
         }
+      }
+
+      // Cerrar modal
+      closeModal();
+
+      // Notificación clara del resultado
+      if (cloudSynced) {
+        showToast('¡Tu recuerdo y video se publicaron en la nube para todos! 🎉', 5000);
+      } else {
+        showToast('⚠️ Tu recuerdo se guardó en este dispositivo, pero no se pudo sincronizar a Google Drive para los demás. Revisa que Apps Script tenga permisos de acceso público ("Cualquiera").', 8000);
+      }
+
+      // Scroll suave al inicio del muro
+      const boardEl = document.getElementById('muro-board-container');
+      if (boardEl) {
+        const headerHeight = 76;
+        window.scrollTo({
+          top: boardEl.getBoundingClientRect().top + window.pageYOffset - headerHeight - 20,
+          behavior: 'smooth'
+        });
       }
     });
   }
