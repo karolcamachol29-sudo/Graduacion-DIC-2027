@@ -421,26 +421,31 @@
   transform: translateY(0);
 }
 
-/* Video Responsive con Iframe de Google Drive */
+/* Video Responsive con Iframe de Google Drive y HTML5 Nativo */
 .card-video-container {
   position: relative;
   width: 100%;
   padding-bottom: 56.25%; /* Proporción 16:9 */
   height: 0;
-  background-color: #000000;
+  background-color: #0a0a0a;
+  overflow: hidden;
 }
 
 .card-video-container.aspect-vertical {
   padding-bottom: 125%; /* Proporción vertical tipo reel */
 }
 
-.card-video-container iframe {
+.card-video-container iframe,
+.card-video-container video,
+.card-video-player {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   border: 0;
+  object-fit: contain;
+  background-color: #000000;
 }
 
 /* Cuerpo del texto */
@@ -1068,3 +1073,606 @@
   line-height: 1.5;
   margin-bottom: 1.5rem;
 }
+
+/* ==========================================================================
+   SISTEMA DE EMOJIS, MOODS Y MULTIREACCIONES
+   ========================================================================== */
+
+/* 1. Botón de Emoji dentro del Input de Nombre */
+.input-with-action {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-with-action .form-input {
+  padding-right: 2.85rem;
+}
+
+.btn-input-emoji {
+  position: absolute;
+  right: 6px;
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+  line-height: 1;
+}
+
+.btn-input-emoji:hover {
+  transform: scale(1.18);
+  background-color: var(--color-bg-subtle);
+}
+
+/* 2. Cabecera con Botón de Catálogo Completo de Emojis */
+.label-with-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.45rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-emoji-catalog-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-main);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.22rem 0.65rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-emoji-catalog-toggle:hover {
+  background-color: #FFFFFF;
+  border-color: var(--color-sage);
+  color: var(--color-sage-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* 3. Barra de Moods y Expresiones Rápidas */
+.mood-bar-container {
+  margin-top: 0.6rem;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.75rem;
+}
+
+.mood-header-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.mood-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.mood-tabs {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  scrollbar-width: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.mood-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.mood-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.22rem 0.65rem;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mood-tab-btn:hover {
+  color: var(--color-text-main);
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.mood-tab-btn.is-active {
+  background-color: var(--color-sage);
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(91, 107, 84, 0.25);
+}
+
+.mood-emojis-slider {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-top: 0.45rem;
+  padding-bottom: 0.2rem;
+  scrollbar-width: thin;
+}
+
+.mood-emoji-btn {
+  background: #FFFFFF;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 1.35rem;
+  line-height: 1;
+  padding: 0.35rem 0.45rem;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease, box-shadow 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 38px;
+  user-select: none;
+}
+
+.mood-emoji-btn:hover {
+  transform: scale(1.28) translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  background-color: #FFFFFF;
+  z-index: 2;
+}
+
+.mood-emoji-btn:active {
+  transform: scale(0.92);
+}
+
+/* 4. Popover Flotante: Catálogo Completo (Web Component) */
+.emoji-picker-popover {
+  position: fixed;
+  z-index: 10050;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 360px;
+  width: 90vw;
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.emoji-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.9rem;
+  background-color: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.emoji-picker-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  font-family: var(--font-body);
+}
+
+.emoji-picker-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.emoji-picker-close:hover {
+  color: var(--color-text-main);
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+emoji-picker.fiq-emoji-picker {
+  width: 100%;
+  height: 340px;
+  border: none;
+  --background: #FFFFFF;
+  --border-color: transparent;
+  --input-border-color: var(--color-border);
+  --outline-color: var(--color-sage);
+}
+
+/* 5. Multireacciones en las Tarjetas Padlet */
+.card-reactions-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.reaction-picker-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: -6px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--color-border);
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px) scale(0.92);
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+}
+
+.reaction-picker-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 20px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #FFFFFF transparent transparent transparent;
+}
+
+.card-reactions-wrapper:hover .reaction-picker-bubble,
+.card-reactions-wrapper.is-picking .reaction-picker-bubble {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.bubble-emoji-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.45rem;
+  line-height: 1;
+  padding: 3px 4px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bubble-emoji-btn:hover {
+  transform: scale(1.4) translateY(-4px);
+  background-color: var(--color-bg-subtle);
+}
+
+.bubble-emoji-btn:active {
+  transform: scale(0.92);
+}
+
+.reaction-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.34rem 0.72rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.reaction-active-badge:hover {
+  background-color: #FFFFFF;
+  border-color: var(--color-border-hover);
+  transform: translateY(-1px);
+}
+
+.reaction-active-badge.has-reacted {
+  background-color: #FFF0F2;
+  border-color: #FFCCD5;
+  color: #E63946;
+}
+
+.reaction-active-badge .reaction-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.reaction-active-badge.animating .reaction-icon {
+  transform: scale(1.45);
+}
+
+.reactions-cluster {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 2px;
+}
+
+.reactions-cluster span {
+  margin-left: -4px;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.reactions-cluster span:first-child {
+  margin-left: 0;
+}
+
+/* --------------------------------------------------------------------------
+   6. SISTEMA DE MODERACIÓN AUTOMÁTICA Y SEGURIDAD (CLIENT-SIDE)
+   -------------------------------------------------------------------------- */
+
+/* Estado de Verificación con IA */
+.moderation-status-box {
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.moderation-status-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--color-text-main);
+  font-weight: 500;
+}
+
+.moderation-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-sage);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.moderation-status-box.is-verified {
+  background-color: #F0FDF4;
+  border-color: #BBF7D0;
+  color: #166534;
+}
+
+.moderation-status-box.is-verified .moderation-spinner {
+  display: none;
+}
+
+/* Banner de Alerta de Contenido Bloqueado (NSFW / Obsceno) */
+.moderation-alert-banner {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: #FEF2F2;
+  border: 1.5px solid #FCA5A5;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  animation: shakeAlert 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shakeAlert {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+  40%, 60% { transform: translate3d(3px, 0, 0); }
+}
+
+.moderation-alert-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.moderation-alert-content strong {
+  display: block;
+  font-size: 0.86rem;
+  color: #991B1B;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.moderation-alert-content p {
+  font-size: 0.8rem;
+  color: #B91C1C;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Casilla de Verificación y Compromiso Comunitario */
+.moderation-compliance-box {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  background-color: var(--color-gold-tint);
+  border: 1px solid var(--color-gold-light);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.moderation-compliance-box.has-error {
+  border-color: #EF4444;
+  background-color: #FEF2F2;
+  animation: shakeAlert 0.35s ease-in-out;
+}
+
+.compliance-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.compliance-checkbox {
+  margin-top: 0.2rem;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--color-sage);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.compliance-text {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--color-text-main);
+}
+
+.compliance-text strong {
+  color: #9A3412;
+}
+
+/* Botón de Reportar 🚩 en las Tarjetas */
+.btn-report-card {
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  opacity: 0.35;
+  transition: all var(--transition-fast);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.padlet-card:hover .btn-report-card {
+  opacity: 0.8;
+}
+
+.btn-report-card:hover {
+  opacity: 1;
+  transform: scale(1.18);
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+}
+
+/* Tarjeta Reportada (Oculta con overlay) */
+.padlet-card.is-reported {
+  position: relative;
+  border-color: var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+.card-reported-overlay {
+  padding: 2.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.65rem;
+  color: var(--color-text-muted);
+}
+
+.card-reported-overlay .reported-icon {
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+.card-reported-overlay strong {
+  font-size: 0.92rem;
+  color: var(--color-text-main);
+}
+
+.card-reported-overlay p {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 240px;
+}
+
+.btn-undo-report {
+  margin-top: 0.4rem;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-undo-report:hover {
+  background: var(--color-bg-base);
+  border-color: var(--color-sage);
+  color: var(--color-sage);
+}
+
+/* Modal Pequeño de Reporte */
+.modal-dialog-sm {
+  max-width: 440px;
+}
+
+.report-notice-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-md);
+}
+
+.btn-danger-submit {
+  background-color: #DC2626;
+  color: #FFFFFF;
+  border: none;
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-full);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+}
+
+.btn-danger-submit:hover {
+  background-color: #B91C1C;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+}
+
+

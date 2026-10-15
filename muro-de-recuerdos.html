@@ -23,6 +23,13 @@
   <!-- Hojas de estilos del proyecto -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/muro.css">
+
+  <!-- Catálogo Completo de Emojis Unicode (Web Component) -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+
+  <!-- Moderación de Contenido por IA (Client-Side con TensorFlow.js y NSFWJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js"></script>
 </head>
 <body>
 
@@ -223,34 +230,62 @@
       <form id="upload-form">
         <div class="modal-body">
           
-          <!-- Nombre o apodo -->
+          <!-- Nombre o apodo con botón de emoji -->
           <div class="form-group">
             <label for="upload-autor" class="form-label">
               <span>Tu nombre o apodo <span class="req">*</span></span>
               <span style="font-size: 0.76rem; color: var(--color-text-muted); font-weight: normal;">Visible en la tarjeta</span>
             </label>
-            <input 
-              type="text" 
-              id="upload-autor" 
-              class="form-input" 
-              placeholder="Ej. Carlos M. / IQ Alimentos" 
-              maxlength="45" 
-              required 
-            />
+            <div class="input-with-action">
+              <input 
+                type="text" 
+                id="upload-autor" 
+                class="form-input" 
+                placeholder="Ej. Carlos M. / IQ Alimentos" 
+                maxlength="45" 
+                required 
+              />
+              <button type="button" class="btn-input-emoji js-emoji-trigger" data-target="upload-autor" title="Insertar emoji en tu nombre" aria-label="Abrir selector de emojis para nombre">
+                😊
+              </button>
+            </div>
           </div>
 
-          <!-- Mensaje / anécdota -->
+          <!-- Mensaje / anécdota con selector completo y barra de moods -->
           <div class="form-group">
-            <label for="upload-titulo" class="form-label">
-              <span>Cuenta qué pasó en este momento...</span>
-              <span style="font-size: 0.76rem; color: var(--color-text-muted); font-weight: normal;">Opcional</span>
-            </label>
+            <div class="label-with-action">
+              <label for="upload-titulo" class="form-label" style="margin-bottom: 0;">
+                <span>Cuenta qué pasó en este momento...</span>
+                <span style="font-size: 0.76rem; color: var(--color-text-muted); font-weight: normal;">Opcional</span>
+              </label>
+              <button type="button" class="btn-emoji-catalog-toggle js-emoji-trigger" data-target="upload-titulo" title="Abrir catálogo completo con buscador">
+                <span>😊</span> <span>Todos los Emojis ▾</span>
+              </button>
+            </div>
             <textarea 
               id="upload-titulo" 
               class="form-textarea" 
               placeholder="Escribe la historia o contexto detrás de este recuerdo..." 
               maxlength="500"
             ></textarea>
+
+            <!-- 2. BARRA DE MOODS Y EXPRESIONES RÁPIDAS (CATEGORIZADA) -->
+            <div class="mood-bar-container">
+              <div class="mood-header-line">
+                <span class="mood-title">Expresiones rápidas por mood:</span>
+              </div>
+              <div class="mood-tabs" role="tablist" aria-label="Categorías de expresiones">
+                <button type="button" class="mood-tab-btn is-active" data-mood="caos">🤣 Risas & Caos</button>
+                <button type="button" class="mood-tab-btn" data-mood="drama">🤬 Enojo & Clima</button>
+                <button type="button" class="mood-tab-btn" data-mood="nostalgia">🥹 Nostalgia</button>
+                <button type="button" class="mood-tab-btn" data-mood="lab">🧪 Lab & Estudio</button>
+                <button type="button" class="mood-tab-btn" data-mood="fiesta">🎓 Fiesta & Grad</button>
+                <button type="button" class="mood-tab-btn" data-mood="top">😎 Top & Actitud</button>
+              </div>
+              <div class="mood-emojis-slider" id="mood-emojis-slider" role="toolbar" aria-label="Expresiones del mood seleccionado">
+                <!-- Se inyectan dinámicamente con muro.js -->
+              </div>
+            </div>
           </div>
 
           <!-- Selector de categoría -->
@@ -277,13 +312,13 @@
             <div class="dropzone" id="dropzone">
               <div class="dropzone-icon">📷</div>
               <span class="dropzone-text">Arrastra tu foto o video aquí o haz clic para explorar</span>
-              <span class="dropzone-hint">Fotos (JPG, PNG, WEBP) · Videos (MP4, MOV, máx. 35 MB)</span>
+              <span class="dropzone-hint">Fotos (JPG, PNG, WEBP) · Videos (MP4, MOV, máx. 35 MB) · Audios prohibidos</span>
             </div>
 
             <input 
               type="file" 
               id="media-file-input" 
-              accept="image/*,video/*" 
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" 
               style="display: none;" 
             />
 
@@ -302,6 +337,33 @@
                 </button>
               </div>
             </div>
+
+            <!-- 1 & 2. Estado de moderación con IA en tiempo real -->
+            <div class="moderation-status-box" id="moderation-status-box" style="display: none;">
+              <div class="moderation-status-inner">
+                <span class="moderation-spinner" id="moderation-spinner"></span>
+                <span class="moderation-status-text" id="moderation-status-text">🔍 Verificando que el contenido sea seguro para la graduación...</span>
+              </div>
+            </div>
+
+            <!-- Banner de bloqueo si se detecta NSFW / Obscenidad -->
+            <div class="moderation-alert-banner" id="moderation-alert-banner" style="display: none;">
+              <div class="moderation-alert-icon">⚠️</div>
+              <div class="moderation-alert-content">
+                <strong id="moderation-alert-title">Contenido bloqueado</strong>
+                <p id="moderation-alert-desc">El sistema detectó contenido sexual o inapropiado. Este es un muro de recuerdos universitarios.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Advertencia y Casilla de Verificación Obligatoria -->
+          <div class="moderation-compliance-box" id="compliance-box">
+            <label class="compliance-checkbox-label" for="upload-compliance">
+              <input type="checkbox" id="upload-compliance" class="compliance-checkbox" required />
+              <span class="compliance-text">
+                Al subir este recuerdo confirmo que <strong>no contiene desnudos, contenido sexual ni audios eróticos/broma</strong> (tu IP queda registrada por seguridad).
+              </span>
+            </label>
           </div>
 
           <!-- Barra de progreso de carga -->
@@ -424,6 +486,52 @@
       </div>
     </div>
   </footer>
+
+  <!-- ======================================================================
+       POPOVER FLOTANTE: CATÁLOGO COMPLETO DE EMOJIS (UNICODE CON BUSCADOR)
+       ====================================================================== -->
+  <div id="emoji-picker-popover" class="emoji-picker-popover" style="display: none;" role="dialog" aria-modal="false" aria-label="Catálogo de emojis">
+    <div class="emoji-picker-header">
+      <div style="display: flex; align-items: center; gap: 0.45rem;">
+        <span style="font-size: 1.15rem;">😊</span>
+        <span class="emoji-picker-title">Catálogo Completo</span>
+      </div>
+      <button type="button" id="close-emoji-picker-btn" class="emoji-picker-close" aria-label="Cerrar catálogo de emojis">&times;</button>
+    </div>
+    <emoji-picker class="fiq-emoji-picker light"></emoji-picker>
+  </div>
+
+  <!-- ======================================================================
+       MODAL DE CONFIRMACIÓN DE REPORTE 🚩
+       ====================================================================== -->
+  <div class="modal-overlay" id="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-modal-title">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 id="report-modal-title">🚩 Reportar Publicación</h3>
+          <p>Ayúdanos a mantener la comunidad FIQ segura y respetuosa</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="close-report-modal" aria-label="Cerrar ventana">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.92rem; color: var(--color-text-main); line-height: 1.5; margin-bottom: 0.85rem;">
+          ¿Deseas reportar este recuerdo por contener <strong>desnudos, contenido sexual, audio erótico/broma pesada o lenguaje obsceno</strong>?
+        </p>
+        <div class="report-notice-box">
+          <span style="font-size: 1.35rem;">🛡️</span>
+          <p style="font-size: 0.82rem; margin: 0; line-height: 1.45; color: var(--color-text-muted);">
+            Al confirmar, la publicación se <strong>ocultará de inmediato en tu pantalla</strong> y se enviará una notificación al Comité de Graduación para su retiro en Google Drive/Sheets.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel" id="cancel-report-btn">Cancelar</button>
+        <button type="button" class="btn-danger-submit" id="confirm-report-btn">
+          🚩 Confirmar Reporte
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="js/main.js"></script>
