@@ -1063,11 +1063,10 @@ document.addEventListener('DOMContentLoaded', () => {
         reason: parsed.motivo || ''
       };
     } catch (err) {
-      console.warn('Fallo al conectar con moderación de Gemini en Apps Script:', err);
-      // Fallback amigable: permitir la subida para no trabar al usuario si Apps Script está frío
+      console.error('Fallo al conectar con moderación de Gemini en Apps Script:', err);
       return {
-        safe: true,
-        reason: ''
+        safe: false,
+        reason: 'No se pudo verificar con Gemini IA. Por favor intenta de nuevo.'
       };
     }
   };
