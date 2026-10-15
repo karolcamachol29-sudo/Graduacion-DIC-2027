@@ -470,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="card-reported-overlay">
           <span class="reported-icon">🚩</span>
           <strong>Publicación Oculta</strong>
-          <p>Has reportado este recuerdo por contenido inapropiado o audio erótico. El comité revisará este caso.</p>
+          <p>Has reportado este recuerdo por contenido explícito o inapropiado. El comité revisará este caso.</p>
           <button type="button" class="btn-undo-report" data-post-id="${post.id}">
             Deshacer reporte
           </button>
@@ -573,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <span class="card-date">${formatRelativeTime(post.fecha)}</span>
         </div>
-        <button type="button" class="btn-report-card" data-post-id="${post.id}" title="Reportar contenido inapropiado o audio erótico" aria-label="Reportar recuerdo">
+        <button type="button" class="btn-report-card" data-post-id="${post.id}" title="Reportar contenido explícito o inapropiado" aria-label="Reportar recuerdo">
           🚩
         </button>
       </div>
@@ -1146,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filenameCheck.flagged) {
       showModerationAlert(
         '⚠️ Nombre de archivo inapropiado',
-        'El nombre del archivo contiene términos explícitos o sexuales no permitidos. Por favor renombra tu archivo o elige otro.'
+        'El nombre del archivo contiene términos explícitos o no permitidos. Por favor renombra tu archivo o elige otro.'
       );
       showToast('⚠️ Archivo bloqueado por términos explícitos.');
       clearFileSelection();
@@ -1198,9 +1198,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!check.safe) {
             showModerationAlert(
               '⚠️ Contenido bloqueado',
-              'El sistema detectó contenido sexual o inapropiado. Este es un muro de recuerdos universitarios.'
+              'El sistema detectó contenido explícito o inapropiado. Este es un muro de recuerdos universitarios.'
             );
-            showToast('⚠️ Imagen bloqueada por contener contenido explícito/NSFW.');
+            showToast('⚠️ Imagen bloqueada por contenido explícito.');
             clearFileSelection();
             return;
           }
@@ -1237,9 +1237,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!check.safe) {
               showModerationAlert(
                 '⚠️ Contenido bloqueado',
-                'El sistema detectó contenido sexual o inapropiado. Este es un muro de recuerdos universitarios.'
+                'El sistema detectó contenido explícito o inapropiado. Este es un muro de recuerdos universitarios.'
               );
-              showToast('⚠️ Imagen bloqueada por contener contenido explícito/NSFW.');
+              showToast('⚠️ Imagen bloqueada por contenido explícito.');
               clearFileSelection();
               return;
             }
@@ -1294,9 +1294,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!result.safe) {
           showModerationAlert(
             '⚠️ Contenido bloqueado',
-            `El sistema detectó contenido sexual o inapropiado en los fotogramas del video (${result.reason || ''}). Este es un muro de recuerdos universitarios.`
+            `El sistema detectó contenido explícito o inapropiado en los fotogramas del video (${result.reason || ''}). Este es un muro de recuerdos universitarios.`
           );
-          showToast('⚠️ Video bloqueado por contener contenido explícito/NSFW.');
+          showToast('⚠️ Video bloqueado por contenido explícito.');
           clearFileSelection();
           return;
         }
@@ -1434,7 +1434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tituloCheck.flagged) {
           showModerationAlert(
             '⚠️ Descripción inapropiada',
-            'El texto de la anécdota contiene lenguaje sexual u ofensivo no permitido. Por favor edita tu mensaje.'
+            'El texto de la anécdota contiene lenguaje explícito u ofensivo no permitido. Por favor edita tu mensaje.'
           );
           showToast('⚠️ Texto con lenguaje no permitido.');
           tituloInput && tituloInput.focus();
