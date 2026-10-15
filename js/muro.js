@@ -304,6 +304,34 @@ document.addEventListener('DOMContentLoaded', () => {
             // Filtrar posts de prueba remotos
             remotePosts = remotePosts.filter(p => !isTestPost(p));
 
+            // Asegurar que las reacciones del usuario en este navegador se preserven y sumen
+            const myIdentifier = userIp || visitorId;
+            remotePosts.forEach((rp) => {
+              const localChoice = userReactionsMap[rp.id] || (rp.fileId ? userReactionsMap[rp.fileId] : null) || (likedPostsLocal.includes(rp.id) || (rp.fileId && likedPostsLocal.includes(rp.fileId)) ? '❤️' : null);
+              rp.reactions = rp.reactions || {};
+              rp.ips_likes = rp.ips_likes || [];
+
+              // Si el usuario reaccionó localmente pero en la nube aún no aparece su IP
+              if (localChoice && myIdentifier && !rp.ips_likes.includes(myIdentifier)) {
+                rp.ips_likes.push(myIdentifier);
+                rp.likes = Math.max(Number(rp.likes) || 0, rp.ips_likes.length, 1);
+                rp.reactions[localChoice] = (rp.reactions[localChoice] || 0) + 1;
+
+                // Sincronizar en segundo plano la reacción a Google Sheets
+                fetch(SCRIPT_URL, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({
+                    action: 'like',
+                    id: rp.id,
+                    fileId: rp.fileId,
+                    emoji: localChoice,
+                    ip: myIdentifier
+                  })
+                }).catch(() => {});
+              }
+            });
+
             // Unir sin duplicados: mantener recuerdos locales que aún se estén sincronizando
             const remoteIds = new Set(remotePosts.map(r => String(r.fileId || r.id)));
             const merged = [...remotePosts];
@@ -580,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     // 4. Determinar reacción previa del usuario
-    const userChosenEmoji = userReactionsMap[post.id] || (likedPostsLocal.includes(post.id) ? '❤️' : null);
+    const userChosenEmoji = userReactionsMap[post.id] || (post.fileId ? userReactionsMap[post.fileId] : null) || (likedPostsLocal.includes(post.id) || (post.fileId && likedPostsLocal.includes(post.fileId)) ? '❤️' : null);
     const userHasReacted = Boolean(userChosenEmoji);
 
     // Inicializar reacciones si vienen de Google Apps Script o IndexedDB
@@ -686,7 +714,8 @@ document.addEventListener('DOMContentLoaded', () => {
       reactionBadge.addEventListener('click', (e) => {
         e.stopPropagation();
         // Si nunca ha reaccionado, aplicar ❤️ por defecto de inmediato
-        if (!userReactionsMap[post.id] && !likedPostsLocal.includes(post.id)) {
+        const hasReaction = userReactionsMap[post.id] || (post.fileId && userReactionsMap[post.fileId]) || likedPostsLocal.includes(post.id) || (post.fileId && likedPostsLocal.includes(post.fileId));
+        if (!hasReaction) {
           handleReactionClick(post, '❤️', card);
         } else {
           // En móviles / táctil permite abrir la burbuja para cambiar de reacción
@@ -721,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
      5. SISTEMA DE MULTIREACCIONES (ACTUALIZACIÓN OPTIMISTA + CLUSTERS)
      ------------------------------------------------------------------------ */
   const handleReactionClick = async (post, emoji, card) => {
-    const prevEmoji = userReactionsMap[post.id];
+    const prevEmoji = userReactionsMap[post.id] || (post.fileId ? userReactionsMap[post.fileId] : null);
     const reactionsWrapper = card.querySelector('.card-reactions-wrapper');
     if (reactionsWrapper) reactionsWrapper.classList.remove('is-picking');
 
@@ -746,12 +775,16 @@ document.addEventListener('DOMContentLoaded', () => {
       post.likes = (post.likes || 0) + 1;
       if (!likedPostsLocal.includes(post.id)) {
         likedPostsLocal.push(post.id);
-        localStorage.setItem('fiq_liked_posts', JSON.stringify(likedPostsLocal));
       }
+      if (post.fileId && !likedPostsLocal.includes(post.fileId)) {
+        likedPostsLocal.push(post.fileId);
+      }
+      localStorage.setItem('fiq_liked_posts', JSON.stringify(likedPostsLocal));
     }
 
     post.reactions[emoji] = (post.reactions[emoji] || 0) + 1;
     userReactionsMap[post.id] = emoji;
+    if (post.fileId) userReactionsMap[post.fileId] = emoji;
     localStorage.setItem('fiq_user_reactions_map', JSON.stringify(userReactionsMap));
 
     // Actualización inmediata en el DOM de la tarjeta
@@ -771,7 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const clusterSpan = badge.querySelector('.reactions-cluster');
       if (clusterSpan) {
-        let topEmojis = reactionEntries.slice(0, 3).map(([em]) => em);
+        let topEmojis = [...new Set(reactionEntries.map(([em]) => em))].slice(0, 3);
         if (topEmojis.length === 0) topEmojis = [emoji || '❤️'];
         clusterSpan.innerHTML = topEmojis.map(em => `<span class="reaction-emoji">${em}</span>`).join('');
       }
@@ -790,9 +823,9 @@ document.addEventListener('DOMContentLoaded', () => {
       ips_likes: [userIp || visitorId]
     });
 
-    // Enviar en segundo plano a Google Apps Script
+    // Enviar en segundo plano a Google Apps Script y reconciliar con datos de Sheets
     try {
-      await fetch(SCRIPT_URL, {
+      const resp = await fetch(SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'text/plain;charset=utf-8'
@@ -800,10 +833,45 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({
           action: 'like',
           id: post.id,
+          fileId: post.fileId,
           emoji: emoji,
           ip: userIp || visitorId
         })
       });
+      if (resp.ok) {
+        const resText = await resp.text();
+        try {
+          const resJson = JSON.parse(resText);
+          if (resJson && resJson.likes !== undefined) {
+            post.likes = resJson.likes;
+            if (resJson.reactions) post.reactions = resJson.reactions;
+            if (resJson.ips_likes) post.ips_likes = resJson.ips_likes;
+
+            await updateLocalMemory(post.id, {
+              likes: post.likes,
+              reactions: post.reactions,
+              ips_likes: post.ips_likes
+            });
+
+            // Si la tarjeta sigue visible en el DOM, reconciliar cifras
+            const currentBadge = card.querySelector('.reaction-active-badge');
+            if (currentBadge) {
+              const countSpan = currentBadge.querySelector('.reaction-count');
+              if (countSpan) countSpan.textContent = post.likes;
+
+              const clusterSpan = currentBadge.querySelector('.reactions-cluster');
+              if (clusterSpan && post.reactions) {
+                const entries = Object.entries(post.reactions)
+                  .filter(([_, count]) => count > 0)
+                  .sort((a, b) => b[1] - a[1]);
+                let topEm = [...new Set(entries.map(([em]) => em))].slice(0, 3);
+                if (topEm.length === 0) topEm = [emoji || '❤️'];
+                clusterSpan.innerHTML = topEm.map(em => `<span class="reaction-emoji">${em}</span>`).join('');
+              }
+            }
+          }
+        } catch (_) {}
+      }
     } catch (e) {
       console.info('Reacción guardada localmente.');
     }
