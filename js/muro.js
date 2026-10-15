@@ -7,7 +7,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   // Configuración del endpoint de Google Apps Script
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxaTQZBnF0UGQiSmndaDO-NzGiRnaLupu6Qznul3i8DIOgYQZ_tgKGEnzeJWk6J7hGr/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxLQ0yN1jvoJb2dBd6e4IyxjR-hMLZQtKWJQIxQWWR1RoF87YExuQKri4UWSD7gr1g/exec';
 
   // Elementos DOM principales
   const masonryBoard = document.getElementById('masonry-board');
