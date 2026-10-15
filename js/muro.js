@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Lista local de recuerdos reportados por el usuario
   let reportedPostsLocal = JSON.parse(localStorage.getItem('fiq_reported_posts') || '[]');
+  const GLOBAL_TAKEDOWN_THRESHOLD = 5; // Mínimo 5 denuncias comunitarias para baja definitiva del muro
   let fileModerationPassed = false;
   let isModerating = false;
   let activeReportingPostId = null;
@@ -411,8 +412,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!masonryBoard) return;
     masonryBoard.innerHTML = '';
 
-    // Filtrar publicaciones válidas
-    const validPosts = posts.filter(p => !isTestPost(p));
+    // Filtrar publicaciones válidas (excluir pruebas y las que acumulen 5 o más denuncias comunitarias)
+    const validPosts = posts.filter(p => {
+      if (isTestPost(p) || p.takenDown) return false;
+      const count = Number(p.reportsCount || p.reports || p.denuncias || p.total_reports || (Array.isArray(p.ips_reports) ? p.ips_reports.length : 0)) || 0;
+      return count < GLOBAL_TAKEDOWN_THRESHOLD;
+    });
 
     // Filtrar publicaciones
     const filtered = validPosts.filter((post) => {
@@ -491,14 +496,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const isVideo = post.mimeType && post.mimeType.startsWith('video/');
     const catClass = getCategoryClass(post.categoria);
 
-    // Si la publicación ha sido reportada por el usuario en este navegador, mostrarla oculta
-    if (reportedPostsLocal.includes(post.id)) {
+    // Si la publicación ha sido reportada por el usuario en este navegador, mostrarla oculta para él
+    if (reportedPostsLocal.includes(post.id) || (post.fileId && reportedPostsLocal.includes(post.fileId))) {
       card.classList.add('is-reported');
       card.innerHTML = `
         <div class="card-reported-overlay">
           <span class="reported-icon">🚩</span>
-          <strong>Publicación Oculta</strong>
-          <p>Has reportado este recuerdo por contenido explícito o inapropiado. El comité revisará este caso.</p>
+          <strong>Publicación Oculta en tu pantalla</strong>
+          <p>Has reportado este recuerdo. Permanece oculto en tu dispositivo (se requieren 5 denuncias de la comunidad para la baja definitiva de todos los muros).</p>
           <button type="button" class="btn-undo-report" data-post-id="${post.id}">
             Deshacer reporte
           </button>
@@ -2107,8 +2112,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelReportBtn = document.getElementById('cancel-report-btn');
   const confirmReportBtn = document.getElementById('confirm-report-btn');
 
-  // Configuración de límite de reportes: Máximo 2 reportes en una ventana de 5 minutos
-  const REPORT_RATE_LIMIT = 2;
+  // Configuración de límite de reportes: Máximo 5 reportes por usuario en una ventana de 5 minutos (anti-sabotaje)
+  const REPORT_RATE_LIMIT = 5;
   const REPORT_WINDOW_MS = 5 * 60 * 1000; // 5 minutos
 
   const checkReportRateLimit = () => {
@@ -2204,7 +2209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderBoard();
 
     try {
-      await fetch(SCRIPT_URL, {
+      const response = await fetch(SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
@@ -2215,6 +2220,16 @@ document.addEventListener('DOMContentLoaded', () => {
           reason: 'inappropriate_content'
         })
       });
+      const resJson = await response.json().catch(() => null);
+      if (resJson && (resJson.takenDown || (Number(resJson.reportsCount || resJson.reports || resJson.denuncias) || 0) >= GLOBAL_TAKEDOWN_THRESHOLD)) {
+        const postObj = posts.find(p => p.id === postId || p.fileId === postId);
+        if (postObj) {
+          postObj.takenDown = true;
+          postObj.reportsCount = resJson.reportsCount || GLOBAL_TAKEDOWN_THRESHOLD;
+        }
+        showToast('🚨 Esta publicación acumuló 5 denuncias comunitarias y fue dada de baja definitivamente de todos los muros.');
+        renderBoard();
+      }
     } catch (_) {
       console.info('Reporte guardado localmente.');
     }
