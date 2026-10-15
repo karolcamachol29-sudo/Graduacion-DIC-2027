@@ -22,7 +22,7 @@
 
   <!-- Hojas de estilos del proyecto -->
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/muro.css?v=3.0">
+  <link rel="stylesheet" href="css/muro.css?v=3.2">
 
   <!-- Catálogo Completo de Emojis Unicode (Web Component) -->
   <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
@@ -397,14 +397,18 @@
   </div>
 
   <!-- ======================================================================
-       MODAL LIGHTBOX (VISOR PANTALLA COMPLETA PARA FOTOS)
+       MODAL LIGHTBOX (VISOR EN PANTALLA COMPLETA PARA FOTOS Y VIDEOS)
        ====================================================================== -->
-  <div class="lightbox-overlay" id="lightbox-overlay" role="dialog" aria-modal="true" aria-label="Visor de fotografía en pantalla completa">
+  <div class="lightbox-overlay" id="lightbox-overlay" role="dialog" aria-modal="true" aria-label="Visor de recuerdo en pantalla completa">
     <button type="button" class="lightbox-close-btn" id="lightbox-close-btn" aria-label="Cerrar visor">
       &times;
     </button>
     <div class="lightbox-content">
-      <img src="" alt="Recuerdo en tamaño completo" class="lightbox-img" id="lightbox-img" />
+      <div class="lightbox-media-container" id="lightbox-media-container">
+        <img src="" alt="Recuerdo en tamaño completo" class="lightbox-img" id="lightbox-img" style="display: none;" />
+        <video src="" controls playsinline autoplay class="lightbox-video" id="lightbox-video" style="display: none;"></video>
+        <iframe src="" class="lightbox-iframe" id="lightbox-iframe" style="display: none;" allowfullscreen allow="autoplay"></iframe>
+      </div>
       <div class="lightbox-caption">
         <div class="lightbox-author" id="lightbox-author"></div>
         <div class="lightbox-text" id="lightbox-text"></div>
@@ -535,6 +539,6 @@
 
   <!-- Scripts -->
   <script src="js/main.js"></script>
-  <script src="js/muro.js?v=3.0"></script>
+  <script src="js/muro.js?v=3.2"></script>
 </body>
 </html>

@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Lightbox
   const lightboxOverlay = document.getElementById('lightbox-overlay');
   const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxVideo = document.getElementById('lightbox-video');
+  const lightboxIframe = document.getElementById('lightbox-iframe');
   const lightboxAuthor = document.getElementById('lightbox-author');
   const lightboxText = document.getElementById('lightbox-text');
   const lightboxCloseBtn = document.getElementById('lightbox-close-btn');
@@ -230,7 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const id = String(p.id || '');
     const fileId = String(p.fileId || '');
     return autor.includes('antigravity') || 
+           autor.includes('testbot') ||
+           autor.includes('test') ||
            titulo.includes('antigravity') || 
+           titulo.includes('prueba de conexion') ||
            id === 'mem_1792048028772' || 
            id === 'mem_1792048001569' ||
            fileId === '1hZt_pYRwvGS8w-QImaIqI30l1U_S2n5t' ||
@@ -484,8 +489,79 @@ document.addEventListener('DOMContentLoaded', () => {
       (typeof post.ips_likes === 'string' && (post.ips_likes.includes(userIp) || post.ips_likes.includes(visitorId)))
     )) || likedPostsLocal.includes(post.id);
 
-    // Encabezado de la tarjeta con botón de reporte 🚩
-    let html = `
+    // 1. Contenido Multimedia estilo Pinterest (Media al frente con bordes superiores adaptados)
+    let html = `<div class="card-media-wrapper">`;
+    if (isVideo) {
+      const hasValidDriveId = post.fileId && post.fileId !== 'uploaded-local' && !String(post.fileId).startsWith('mem-');
+      const videoDirectSrc = post.urlFallback || (hasValidDriveId ? `https://drive.google.com/uc?export=download&id=${post.fileId}` : '');
+      const posterSrc = hasValidDriveId ? `https://lh3.googleusercontent.com/d/${post.fileId}` : '';
+      const drivePreviewSrc = hasValidDriveId ? `https://drive.google.com/file/d/${post.fileId}/preview` : '';
+
+      html += `
+        <div class="card-video-container js-lightbox-trigger" 
+             data-type="video" 
+             data-video-src="${videoDirectSrc}" 
+             data-poster-src="${posterSrc}" 
+             data-fallback-src="${drivePreviewSrc}" 
+             data-author="${escapeHtml(post.autor)}" 
+             data-text="${escapeHtml(post.titulo || '')}">
+          <div class="card-video-preview">
+            ${posterSrc 
+              ? `<img src="${posterSrc}" alt="Video de ${escapeHtml(post.autor)}" class="card-video-thumb" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" />
+                 <div class="video-placeholder-box" style="display: none;"><span class="video-play-triangle">▶</span> Ver video</div>` 
+              : (post.urlFallback 
+                  ? `<video src="${post.urlFallback}" preload="metadata" muted playsinline class="card-video-thumb"></video>`
+                  : `<div class="video-placeholder-box"><span class="video-play-triangle">▶</span> Ver video</div>`
+                )
+            }
+            <div class="video-play-overlay">
+              <span class="video-play-badge">
+                <span class="video-play-triangle">▶</span>
+                <span class="video-play-text">Ver video</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Imagen
+      const hasValidDriveId = post.fileId && post.fileId !== 'uploaded-local' && !String(post.fileId).startsWith('mem-');
+      const imgSrc = hasValidDriveId
+        ? `https://drive.google.com/thumbnail?id=${post.fileId}&sz=w1000`
+        : (post.urlFallback || '');
+
+      html += `
+        <div class="card-image-container js-lightbox-trigger" 
+             data-type="image" 
+             data-full-src="${imgSrc}" 
+             data-author="${escapeHtml(post.autor)}" 
+             data-text="${escapeHtml(post.titulo || '')}">
+          <img 
+            src="${imgSrc}" 
+            alt="Recuerdo de ${escapeHtml(post.autor)}" 
+            class="card-image" 
+            loading="lazy"
+            onerror="this.onerror=null; this.parentElement.style.display='none';"
+          />
+          <div class="image-zoom-overlay">
+            <span class="zoom-badge">🔍 Ver en grande</span>
+          </div>
+        </div>
+      `;
+    }
+    html += `</div>`;
+
+    // 2. Mensaje de texto / anécdota
+    if (post.titulo && post.titulo.trim().length > 0) {
+      html += `
+        <div class="card-body">
+          <p class="card-text">${escapeHtml(post.titulo)}</p>
+        </div>
+      `;
+    }
+
+    // 3. Encabezado de usuario estilo Pinterest (Avatar + Autor + Categoría + Fecha + Reporte)
+    html += `
       <div class="card-user-header">
         <div class="user-avatar" title="${escapeHtml(post.autor || 'Compañero')}">
           ${getAvatarInitials(post.autor)}
@@ -503,94 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    // Contenido Multimedia
-    html += `<div class="card-media-wrapper">`;
-    if (isVideo) {
-      const hasValidDriveId = post.fileId && post.fileId !== 'uploaded-local' && !String(post.fileId).startsWith('mem-');
-
-      if (post.urlFallback) {
-        // Video Local / HTML5 Nativo: se reproduce de inmediato desde el almacenamiento local
-        html += `
-          <div class="card-video-container">
-            <video 
-              src="${post.urlFallback}" 
-              controls 
-              playsinline 
-              preload="metadata" 
-              class="card-video-player"
-              title="Video recuerdo de ${escapeHtml(post.autor)}">
-              Tu navegador no soporta reproducción de video.
-            </video>
-          </div>
-        `;
-      } else if (hasValidDriveId) {
-        // Video desde Google Drive (para compañeros en otros dispositivos)
-        const driveDirectSrc = `https://lh3.googleusercontent.com/d/${post.fileId}`;
-        const drivePreviewSrc = `https://drive.google.com/file/d/${post.fileId}/preview`;
-
-        html += `
-          <div class="card-video-container">
-            <video 
-              src="${driveDirectSrc}" 
-              controls 
-              playsinline 
-              preload="metadata" 
-              class="card-video-player"
-              title="Video recuerdo de ${escapeHtml(post.autor)}"
-              onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';">
-              Tu navegador no soporta reproducción de video.
-            </video>
-            <iframe 
-              src="${drivePreviewSrc}" 
-              loading="lazy" 
-              style="display: none;"
-              title="Video recuerdo de ${escapeHtml(post.autor)}" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowfullscreen>
-            </iframe>
-          </div>
-        `;
-      } else {
-        html += `
-          <div class="card-video-container" style="display:flex;align-items:center;justify-content:center;background:#0a0a0a;color:rgba(255,255,255,0.7);font-size:0.85rem;padding:2rem;text-align:center;">
-            <span>🎬 Video procesándose en el servidor...</span>
-          </div>
-        `;
-      }
-    } else {
-      // Imagen
-      const hasValidDriveId = post.fileId && post.fileId !== 'uploaded-local' && !String(post.fileId).startsWith('mem-');
-      const imgSrc = hasValidDriveId
-        ? `https://drive.google.com/thumbnail?id=${post.fileId}&sz=w1000`
-        : (post.urlFallback || '');
-
-      html += `
-        <div class="card-image-container js-lightbox-trigger" data-full-src="${imgSrc}" data-author="${escapeHtml(post.autor)}" data-text="${escapeHtml(post.titulo || '')}">
-          <img 
-            src="${imgSrc}" 
-            alt="Recuerdo de ${escapeHtml(post.autor)}" 
-            class="card-image" 
-            loading="lazy"
-            onerror="this.onerror=null; this.parentElement.style.display='none';"
-          />
-          <div class="image-zoom-overlay">
-            <span class="zoom-badge">🔍 Ver en grande</span>
-          </div>
-        </div>
-      `;
-    }
-    html += `</div>`;
-
-    // Mensaje de texto / anécdota
-    if (post.titulo && post.titulo.trim().length > 0) {
-      html += `
-        <div class="card-body">
-          <p class="card-text">${escapeHtml(post.titulo)}</p>
-        </div>
-      `;
-    }
-
-    // Determinar reacción previa del usuario
+    // 4. Determinar reacción previa del usuario
     const userChosenEmoji = userReactionsMap[post.id] || (likedPostsLocal.includes(post.id) ? '❤️' : null);
     const userHasReacted = Boolean(userChosenEmoji);
 
@@ -606,7 +595,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const totalLikes = Math.max(post.likes || 0, reactionEntries.reduce((sum, [_, count]) => sum + count, 0));
 
-    let topEmojis = reactionEntries.slice(0, 3).map(([emoji]) => emoji);
+    // Deduplicar emojis para que nunca aparezca dos veces el mismo emoji
+    let topEmojis = [...new Set(reactionEntries.map(([emoji]) => emoji))].slice(0, 3);
     if (topEmojis.length === 0) {
       topEmojis = [userChosenEmoji || '❤️'];
     }
@@ -645,17 +635,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     card.innerHTML = html;
 
-    // Asignar evento de Lightbox a la imagen
-    const imageContainer = card.querySelector('.js-lightbox-trigger');
-    if (imageContainer) {
-      imageContainer.addEventListener('click', () => {
-        openLightbox(
-          imageContainer.getAttribute('data-full-src'),
-          imageContainer.getAttribute('data-author'),
-          imageContainer.getAttribute('data-text')
-        );
+    // Asignar eventos de Lightbox ampliado para fotos y videos ("al picarle aumenta de tamaño")
+    const lightboxTriggers = card.querySelectorAll('.js-lightbox-trigger');
+    lightboxTriggers.forEach((trigger) => {
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = trigger.getAttribute('data-type') || 'image';
+        if (type === 'video') {
+          openLightbox({
+            src: trigger.getAttribute('data-video-src'),
+            poster: trigger.getAttribute('data-poster-src'),
+            fallbackSrc: trigger.getAttribute('data-fallback-src'),
+            author: trigger.getAttribute('data-author'),
+            text: trigger.getAttribute('data-text'),
+            type: 'video'
+          });
+        } else {
+          openLightbox({
+            src: trigger.getAttribute('data-full-src'),
+            author: trigger.getAttribute('data-author'),
+            text: trigger.getAttribute('data-text'),
+            type: 'image'
+          });
+        }
       });
-    }
+    });
+
+    // Clic en la tarjeta abre el visor ampliado estilo Pinterest
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.card-reactions-wrapper') || e.target.closest('.btn-report-card') || e.target.closest('.btn-undo-report')) {
+        return;
+      }
+      const trigger = card.querySelector('.js-lightbox-trigger');
+      if (trigger) trigger.click();
+    });
 
     // Asignar eventos de Multireacciones
     const bubbleBtns = card.querySelectorAll('.bubble-emoji-btn');
@@ -689,44 +702,6 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         openReportModal(post.id);
       });
-    }
-
-    // Adaptación automática y detección de relación de aspecto (vertical/horizontal/cuadrada)
-    const videoPlayer = card.querySelector('video.card-video-player');
-    if (videoPlayer) {
-      videoPlayer.addEventListener('loadedmetadata', () => {
-        const vH = videoPlayer.videoHeight;
-        const vW = videoPlayer.videoWidth;
-        const vContainer = videoPlayer.closest('.card-video-container');
-        if (vH > vW) {
-          card.classList.add('media-portrait');
-          if (vContainer) vContainer.classList.add('aspect-vertical', 'is-portrait');
-        } else {
-          card.classList.add('media-landscape');
-          if (vContainer) vContainer.classList.add('is-landscape');
-        }
-      });
-    }
-
-    const imgElem = card.querySelector('.card-image');
-    if (imgElem) {
-      const detectImgAspect = () => {
-        if (!imgElem.naturalHeight || !imgElem.naturalWidth) return;
-        if (imgElem.naturalHeight > imgElem.naturalWidth) {
-          card.classList.add('media-portrait');
-          const imgContainer = imgElem.closest('.card-image-container');
-          if (imgContainer) imgContainer.classList.add('is-portrait');
-        } else {
-          card.classList.add('media-landscape');
-          const imgContainer = imgElem.closest('.card-image-container');
-          if (imgContainer) imgContainer.classList.add('is-landscape');
-        }
-      };
-      if (imgElem.complete && imgElem.naturalHeight) {
-        detectImgAspect();
-      } else {
-        imgElem.addEventListener('load', detectImgAspect);
-      }
     }
 
     return card;
@@ -1616,13 +1591,82 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ------------------------------------------------------------------------
-     10. LIGHTBOX (VISOR EN PANTALLA COMPLETA PARA FOTOS)
+     10. LIGHTBOX (VISOR EN PANTALLA COMPLETA AMPLIADO PARA FOTOS Y VIDEOS)
      ------------------------------------------------------------------------ */
-  const openLightbox = (src, author, text) => {
-    if (!lightboxOverlay || !lightboxImg) return;
-    lightboxImg.src = src;
-    if (lightboxAuthor) lightboxAuthor.textContent = author ? `Foto de: ${author}` : '';
-    if (lightboxText) lightboxText.textContent = text || '';
+  const openLightbox = (options, optAuthor, optText) => {
+    if (!lightboxOverlay) return;
+
+    let src = '';
+    let author = '';
+    let text = '';
+    let type = 'image';
+    let poster = '';
+    let fallbackSrc = '';
+
+    if (typeof options === 'object' && options !== null) {
+      src = options.src || '';
+      author = options.author || '';
+      text = options.text || '';
+      type = options.type || 'image';
+      poster = options.poster || '';
+      fallbackSrc = options.fallbackSrc || '';
+    } else {
+      src = options || '';
+      author = optAuthor || '';
+      text = optText || '';
+      type = 'image';
+    }
+
+    // Resetear elementos
+    if (lightboxImg) {
+      lightboxImg.style.display = 'none';
+      lightboxImg.src = '';
+    }
+    if (lightboxVideo) {
+      lightboxVideo.style.display = 'none';
+      lightboxVideo.pause();
+      lightboxVideo.removeAttribute('src');
+      lightboxVideo.load();
+    }
+    if (lightboxIframe) {
+      lightboxIframe.style.display = 'none';
+      lightboxIframe.src = '';
+    }
+
+    if (type === 'video') {
+      if (src && lightboxVideo) {
+        lightboxVideo.style.display = 'block';
+        if (poster) lightboxVideo.poster = poster;
+        lightboxVideo.src = src;
+        lightboxVideo.load();
+        lightboxVideo.play().catch(() => {});
+
+        // Fallback transparente al iframe de Google Drive si el navegador bloquea la reproducción directa
+        lightboxVideo.onerror = () => {
+          if (fallbackSrc && lightboxIframe) {
+            lightboxVideo.style.display = 'none';
+            lightboxIframe.style.display = 'block';
+            lightboxIframe.src = fallbackSrc;
+          }
+        };
+      } else if (fallbackSrc && lightboxIframe) {
+        lightboxIframe.style.display = 'block';
+        lightboxIframe.src = fallbackSrc;
+      }
+    } else {
+      if (lightboxImg) {
+        lightboxImg.style.display = 'block';
+        lightboxImg.src = src;
+      }
+    }
+
+    if (lightboxAuthor) {
+      lightboxAuthor.innerHTML = author ? `<span>${type === 'video' ? '🎬 Recuerdo de' : '📸 Recuerdo de'}: <strong>${escapeHtml(author)}</strong></span>` : '';
+    }
+    if (lightboxText) {
+      lightboxText.textContent = text || '';
+    }
+
     lightboxOverlay.classList.add('is-open');
     document.body.style.overflow = 'hidden';
   };
@@ -1631,7 +1675,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!lightboxOverlay) return;
     lightboxOverlay.classList.remove('is-open');
     document.body.style.overflow = '';
-    if (lightboxImg) lightboxImg.src = '';
+    if (lightboxVideo) {
+      lightboxVideo.pause();
+      lightboxVideo.removeAttribute('src');
+      lightboxVideo.load();
+      lightboxVideo.style.display = 'none';
+    }
+    if (lightboxIframe) {
+      lightboxIframe.src = '';
+      lightboxIframe.style.display = 'none';
+    }
+    if (lightboxImg) {
+      lightboxImg.src = '';
+      lightboxImg.style.display = 'none';
+    }
   };
 
   if (lightboxCloseBtn) lightboxCloseBtn.addEventListener('click', closeLightbox);
