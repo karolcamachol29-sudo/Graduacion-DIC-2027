@@ -132,8 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const req = store.getAll();
         req.onsuccess = () => {
           const list = req.result || [];
+          // Purgar recuerdos de prueba de IndexedDB
+          list.forEach((item) => {
+            if (isTestPost(item)) {
+              deleteLocalMemory(item.id);
+            }
+          });
+          const cleanList = list.filter(item => !isTestPost(item));
           // Hidratar con URLs locales válidas para reproducción instantánea
-          const hydrated = list.map((item) => {
+          const hydrated = cleanList.map((item) => {
             if (item.blob) {
               item.urlFallback = URL.createObjectURL(item.blob);
             }
@@ -198,6 +205,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  /* Helper para borrar un recuerdo guardado localmente */
+  const deleteLocalMemory = async (id) => {
+    try {
+      const db = await openMuroDB();
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.delete(id);
+    } catch (e) {
+      console.warn('No se pudo borrar recuerdo local:', e);
+    }
+    try {
+      const list = JSON.parse(localStorage.getItem('fiq_memories_fallback') || '[]');
+      const filtered = list.filter(item => item && item.id !== id && item.fileId !== id);
+      localStorage.setItem('fiq_memories_fallback', JSON.stringify(filtered));
+    } catch (err) {}
+  };
+
+  /* Helper para filtrar publicaciones de prueba */
+  const isTestPost = (p) => {
+    if (!p) return false;
+    const autor = String(p.autor || '').toLowerCase();
+    const titulo = String(p.titulo || '').toLowerCase();
+    const id = String(p.id || '');
+    const fileId = String(p.fileId || '');
+    return autor.includes('antigravity') || 
+           titulo.includes('antigravity') || 
+           id === 'mem_1792048028772' || 
+           id === 'mem_1792048001569' ||
+           fileId === '1hZt_pYRwvGS8w-QImaIqI30l1U_S2n5t' ||
+           fileId === '1hc7cxRLACMbgeSRcHaHOJjL8OJy1KfbG';
+  };
+
   /* ------------------------------------------------------------------------
      2. OBTENCIÓN DE IDENTIFICADOR / IP PÚBLICA
      ------------------------------------------------------------------------ */
@@ -227,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (boardEmpty) boardEmpty.style.display = 'none';
 
     // 1. Cargar recuerdos guardados localmente de inmediato (persistencia garantizada)
-    const localPosts = await getLocalMemories();
+    const localPosts = (await getLocalMemories()).filter(p => !isTestPost(p));
     if (localPosts.length > 0) {
       posts = [...localPosts];
       if (boardLoading) boardLoading.style.display = 'none';
@@ -257,18 +296,23 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           if (remotePosts.length > 0) {
+            // Filtrar posts de prueba remotos
+            remotePosts = remotePosts.filter(p => !isTestPost(p));
+
             // Unir sin duplicados: mantener recuerdos locales que aún se estén sincronizando
             const remoteIds = new Set(remotePosts.map(r => String(r.fileId || r.id)));
             const merged = [...remotePosts];
 
             localPosts.forEach((lp) => {
-              const alreadyRemote = remoteIds.has(String(lp.fileId)) || remoteIds.has(String(lp.id));
-              if (!alreadyRemote) {
-                merged.unshift(lp);
+              if (!isTestPost(lp)) {
+                const alreadyRemote = remoteIds.has(String(lp.fileId)) || remoteIds.has(String(lp.id));
+                if (!alreadyRemote) {
+                  merged.unshift(lp);
+                }
               }
             });
 
-            posts = merged;
+            posts = merged.filter(p => !isTestPost(p));
             // Sincronizar en segundo plano recuerdos pendientes guardados localmente
             syncPendingLocalPosts();
           }
@@ -284,11 +328,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  /* Helper para subir recuerdos que quedaron guardados localmente cuando Google Apps Script estuvo sin acceso */
   const syncPendingLocalPosts = async () => {
     try {
       const localPosts = await getLocalMemories();
-      const pending = localPosts.filter(p => p.fileId === 'uploaded-local' && p.blob);
+      const pending = localPosts.filter(p => !isTestPost(p) && p.fileId === 'uploaded-local' && p.blob);
       if (pending.length === 0) return;
 
       console.info(`Intentando sincronizar ${pending.length} recuerdo(s) pendiente(s) a Google Drive...`);
@@ -335,8 +378,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!masonryBoard) return;
     masonryBoard.innerHTML = '';
 
+    // Filtrar publicaciones válidas
+    const validPosts = posts.filter(p => !isTestPost(p));
+
     // Filtrar publicaciones
-    const filtered = posts.filter((post) => {
+    const filtered = validPosts.filter((post) => {
       // Filtro de categoría
       const matchesCat = currentCategory === 'all' || post.categoria === currentCategory;
 
@@ -352,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Actualizar contadores
-    if (totalCountBadge) totalCountBadge.textContent = posts.length;
+    if (totalCountBadge) totalCountBadge.textContent = validPosts.length;
     if (visibleCountBadge) visibleCountBadge.textContent = `${filtered.length} visible${filtered.length === 1 ? '' : 's'}`;
 
     if (filtered.length === 0) {
@@ -558,12 +604,13 @@ document.addEventListener('DOMContentLoaded', () => {
       .filter(([_, count]) => count > 0)
       .sort((a, b) => b[1] - a[1]);
 
-    const topEmojis = reactionEntries.slice(0, 3).map(([emoji]) => emoji);
-    if (topEmojis.length === 0 && (post.likes > 0)) {
-      topEmojis.push('❤️');
-    }
-    const clusterHtml = topEmojis.map(em => `<span>${em}</span>`).join('');
     const totalLikes = Math.max(post.likes || 0, reactionEntries.reduce((sum, [_, count]) => sum + count, 0));
+
+    let topEmojis = reactionEntries.slice(0, 3).map(([emoji]) => emoji);
+    if (topEmojis.length === 0) {
+      topEmojis = [userChosenEmoji || '❤️'];
+    }
+    const clusterHtml = topEmojis.map(em => `<span class="reaction-emoji">${em}</span>`).join('');
 
     // Pie con multireacciones estilo Padlet / Facebook
     html += `
@@ -586,10 +633,9 @@ document.addEventListener('DOMContentLoaded', () => {
             data-post-id="${post.id}" 
             aria-label="Reaccionar a este recuerdo"
             title="Pasa el cursor o mantén presionado para reaccionar">
-            <div class="reactions-cluster">
+            <span class="reactions-cluster">
               ${clusterHtml}
-            </div>
-            <span class="reaction-icon">${userChosenEmoji || '❤️'}</span>
+            </span>
             <span class="reaction-count">${totalLikes}</span>
           </button>
         </div>
@@ -699,8 +745,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const badge = card.querySelector('.reaction-active-badge');
     if (badge) {
       badge.classList.add('has-reacted', 'animating');
-      const iconSpan = badge.querySelector('.reaction-icon');
-      if (iconSpan) iconSpan.textContent = emoji;
 
       const reactionEntries = Object.entries(post.reactions)
         .filter(([_, count]) => count > 0)
@@ -712,10 +756,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const countSpan = badge.querySelector('.reaction-count');
       if (countSpan) countSpan.textContent = totalCount;
 
-      const clusterDiv = badge.querySelector('.reactions-cluster');
-      if (clusterDiv) {
-        const topEmojis = reactionEntries.slice(0, 3).map(([em]) => em);
-        clusterDiv.innerHTML = topEmojis.map(em => `<span>${em}</span>`).join('');
+      const clusterSpan = badge.querySelector('.reactions-cluster');
+      if (clusterSpan) {
+        let topEmojis = reactionEntries.slice(0, 3).map(([em]) => em);
+        if (topEmojis.length === 0) topEmojis = [emoji || '❤️'];
+        clusterSpan.innerHTML = topEmojis.map(em => `<span class="reaction-emoji">${em}</span>`).join('');
       }
 
       setTimeout(() => {
