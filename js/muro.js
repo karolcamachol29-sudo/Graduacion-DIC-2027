@@ -588,17 +588,14 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }
 
-    // 3. Encabezado de usuario estilo Pinterest (Avatar + Autor + Categoría + Fecha + Reporte)
+    // 3. Encabezado de usuario estilo Pinterest (Avatar + Autor + Fecha + Reporte)
     html += `
       <div class="card-user-header">
         <div class="user-avatar" title="${escapeHtml(post.autor || 'Compañero')}">
           ${getAvatarInitials(post.autor)}
         </div>
         <div class="user-meta">
-          <div class="user-name-line">
-            <span class="user-name">${escapeHtml(post.autor || 'Anónimo')}</span>
-            <span class="card-category-badge ${catClass}">${escapeHtml(post.categoria || 'Recuerdo')}</span>
-          </div>
+          <span class="user-name" title="${escapeHtml(post.autor || 'Anónimo')}">${escapeHtml(post.autor || 'Anónimo')}</span>
           <span class="card-date">${formatRelativeTime(post.fecha)}</span>
         </div>
         <button type="button" class="btn-report-card" data-post-id="${post.id}" title="Reportar contenido explícito o inapropiado" aria-label="Reportar recuerdo">
@@ -630,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const clusterHtml = topEmojis.map(em => `<span class="reaction-emoji">${em}</span>`).join('');
 
-    // Pie con multireacciones estilo Padlet / Facebook
+    // Pie con multireacciones estilo Padlet / Facebook + Etiqueta de Categoría
     html += `
       <div class="card-footer">
         <div class="card-reactions-wrapper">
@@ -657,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="reaction-count">${totalLikes}</span>
           </button>
         </div>
-        <span style="font-size: 0.78rem; color: var(--color-text-light);">FIQ 2027</span>
+        <span class="card-category-badge ${catClass}">${escapeHtml(post.categoria || 'Recuerdo')}</span>
       </div>
     `;
 

@@ -315,18 +315,23 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
 }
 
 .card-category-badge {
   font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   padding: 0.2rem 0.55rem;
   border-radius: var(--radius-full);
   background-color: var(--color-bg-subtle);
   color: var(--color-text-muted);
   flex-shrink: 0;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Colores pastel por categoría */
@@ -1849,13 +1854,20 @@ emoji-picker.fiq-emoji-picker {
   }
 
   .user-name {
-    font-size: 0.8rem;
-    max-width: 85px;
+    font-size: 0.82rem;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .card-category-badge {
     font-size: 0.58rem;
-    padding: 0.15rem 0.4rem;
+    padding: 0.15rem 0.45rem;
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .card-date {
@@ -1883,10 +1895,7 @@ emoji-picker.fiq-emoji-picker {
   .card-footer {
     padding: 0.35rem 0.65rem 0.55rem 0.65rem;
     margin-top: 0.2rem;
-  }
-
-  .card-footer span:last-child {
-    font-size: 0.68rem !important;
+    gap: 0.35rem;
   }
 
   .reaction-active-badge {
