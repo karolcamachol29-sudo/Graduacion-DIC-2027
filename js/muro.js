@@ -1909,7 +1909,55 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelReportBtn = document.getElementById('cancel-report-btn');
   const confirmReportBtn = document.getElementById('confirm-report-btn');
 
+  // Configuración de límite de reportes: Máximo 2 reportes en una ventana de 5 minutos
+  const REPORT_RATE_LIMIT = 2;
+  const REPORT_WINDOW_MS = 5 * 60 * 1000; // 5 minutos
+
+  const checkReportRateLimit = () => {
+    const now = Date.now();
+    let history = [];
+    try {
+      history = JSON.parse(localStorage.getItem('fiq_report_rate_limit') || '[]');
+      if (!Array.isArray(history)) history = [];
+    } catch (_) {
+      history = [];
+    }
+
+    // Filtrar solo los reportes ocurridos en los últimos 5 minutos
+    const recent = history.filter(ts => (now - ts) < REPORT_WINDOW_MS);
+    try {
+      localStorage.setItem('fiq_report_rate_limit', JSON.stringify(recent));
+    } catch (_) {}
+
+    if (recent.length >= REPORT_RATE_LIMIT) {
+      const oldest = Math.min(...recent);
+      const remainingSec = Math.ceil((REPORT_WINDOW_MS - (now - oldest)) / 1000);
+      const remainingMin = Math.ceil(remainingSec / 60);
+      return {
+        allowed: false,
+        remainingSec,
+        remainingMin,
+        recent
+      };
+    }
+
+    return {
+      allowed: true,
+      recent
+    };
+  };
+
   const openReportModal = (postId) => {
+    // 1. Validar límite de velocidad contra reportes masivos / sabotaje
+    const rateCheck = checkReportRateLimit();
+    if (!rateCheck.allowed) {
+      const waitMsg = rateCheck.remainingSec > 60 
+        ? `${rateCheck.remainingMin} min` 
+        : `${rateCheck.remainingSec} seg`;
+      showToast(`⏳ Límite alcanzado: Has realizado ${REPORT_RATE_LIMIT} reportes recientemente. Por protección comunitaria contra sabotajes, espera ${waitMsg} antes de reportar.`);
+      return;
+    }
+
     activeReportingPostId = postId;
     if (reportModal) {
       reportModal.classList.add('is-open');
@@ -1927,7 +1975,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const handleConfirmReport = async () => {
     if (!activeReportingPostId) return;
+
+    // Re-validar rate limit antes de registrar el reporte
+    const rateCheck = checkReportRateLimit();
+    if (!rateCheck.allowed) {
+      closeReportModal();
+      const waitMsg = rateCheck.remainingSec > 60 
+        ? `${rateCheck.remainingMin} min` 
+        : `${rateCheck.remainingSec} seg`;
+      showToast(`⏳ Límite de reportes alcanzado. Por favor espera ${waitMsg}.`);
+      return;
+    }
+
     const postId = activeReportingPostId;
+
+    // Registrar marca de tiempo del reporte para el control de 5 minutos
+    const now = Date.now();
+    const updatedHistory = [...(rateCheck.recent || []), now];
+    try {
+      localStorage.setItem('fiq_report_rate_limit', JSON.stringify(updatedHistory));
+    } catch (_) {}
 
     if (!reportedPostsLocal.includes(postId)) {
       reportedPostsLocal.push(postId);
@@ -1946,6 +2013,7 @@ document.addEventListener('DOMContentLoaded', () => {
           action: 'report',
           id: postId,
           ip: userIp || visitorId,
+          timestamp: now,
           reason: 'inappropriate_content'
         })
       });
@@ -1957,6 +2025,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const handleUndoReport = (postId) => {
     reportedPostsLocal = reportedPostsLocal.filter((id) => id !== postId);
     localStorage.setItem('fiq_reported_posts', JSON.stringify(reportedPostsLocal));
+
+    // Si deshace el reporte, revertir la última marca de tiempo de la cuota
+    try {
+      const history = JSON.parse(localStorage.getItem('fiq_report_rate_limit') || '[]');
+      if (Array.isArray(history) && history.length > 0) {
+        history.pop();
+        localStorage.setItem('fiq_report_rate_limit', JSON.stringify(history));
+      }
+    } catch (_) {}
+
     showToast('Reporte cancelado. Mostrando recuerdo.');
     renderBoard();
   };
