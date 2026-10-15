@@ -970,26 +970,100 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadNSFWModel = async () => {
     if (nsfwModelInstance) return nsfwModelInstance;
     if (typeof window.nsfwjs === 'undefined') {
-      console.warn('NSFWJS no está disponible aún');
-      return null;
+      console.warn('NSFWJS no está disponible aún en window. Esperando...');
+      await new Promise((r) => setTimeout(r, 600));
+      if (typeof window.nsfwjs === 'undefined') {
+        console.error('NSFWJS no está disponible en la página.');
+        return null;
+      }
     }
+
     if (!nsfwModelLoadingPromise) {
-      nsfwModelLoadingPromise = window.nsfwjs.load()
-        .then((model) => {
+      nsfwModelLoadingPromise = (async () => {
+        // 1. Intentar cargar desde el modelo local descargado en el proyecto
+        try {
+          console.info('Cargando modelo NSFWJS local (models/mobilenet_v2/)...');
+          const model = await window.nsfwjs.load('models/mobilenet_v2/');
           nsfwModelInstance = model;
+          console.info('✅ Modelo de moderación NSFWJS cargado exitosamente (local)');
           return model;
-        })
-        .catch((err) => {
-          console.warn('No se pudo cargar el modelo NSFWJS:', err);
+        } catch (localErr) {
+          console.warn('Modelo local no disponible directamente, intentando CDN jsDelivr:', localErr);
+        }
+
+        // 2. Intentar cargar desde CDN oficial de jsDelivr con CORS
+        try {
+          console.info('Cargando modelo NSFWJS desde CDN jsDelivr...');
+          const model = await window.nsfwjs.load('https://cdn.jsdelivr.net/gh/infinitered/nsfwjs@master/models/mobilenet_v2/');
+          nsfwModelInstance = model;
+          console.info('✅ Modelo de moderación NSFWJS cargado exitosamente (CDN)');
+          return model;
+        } catch (cdnErr) {
+          console.error('❌ Error crítico al cargar modelo NSFWJS:', cdnErr);
           nsfwModelLoadingPromise = null;
           return null;
-        });
+        }
+      })();
     }
     return nsfwModelLoadingPromise;
   };
 
+  /* Detección de patrones visuales de sangre, heridas o contenido gore */
+  const scanGoreAndViolence = (imgOrCanvas) => {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const width = 120;
+      const height = 120;
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(imgOrCanvas, 0, 0, width, height);
+
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const data = imgData.data;
+      const totalPixels = width * height;
+
+      let bloodPixels = 0;
+      let darkVisceralPixels = 0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+
+        if (a < 128) continue; // Ignorar transparencias
+
+        // 1. Sangre roja intensa / arterial (R muy dominante sobre G y B)
+        if (r > 115 && g < 70 && b < 70 && (r / (g + 1) > 1.8) && (r / (b + 1) > 1.8)) {
+          bloodPixels++;
+        }
+        // 2. Sangre coagulada / heridas oscuras
+        else if (r > 55 && r < 145 && g < 45 && b < 45 && (r - g > 30) && (r - b > 30)) {
+          darkVisceralPixels++;
+        }
+      }
+
+      const totalSuspicious = bloodPixels + (darkVisceralPixels * 0.85);
+      const ratio = totalSuspicious / totalPixels;
+
+      // Si más del 8% de la imagen contiene patrones de sangre o vísceras
+      if (ratio >= 0.08) {
+        return {
+          safe: false,
+          reason: `Patrón visual de sangre o gore detectado (${Math.round(ratio * 100)}% de coincidencia)`
+        };
+      }
+
+      return { safe: true, ratio };
+    } catch (err) {
+      console.warn('Error en escaneo de gore:', err);
+      return { safe: true };
+    }
+  };
+
   const evaluatePredictions = (predictions) => {
-    if (!Array.isArray(predictions)) return { safe: true };
+    if (!Array.isArray(predictions)) return { safe: false, reason: 'Formato de predicción no reconocido' };
     const scores = {};
     predictions.forEach((p) => {
       scores[p.className] = p.probability;
@@ -998,20 +1072,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const pornProb = scores['Porn'] || 0;
     const hentaiProb = scores['Hentai'] || 0;
     const sexyProb = scores['Sexy'] || 0;
+    const neutralProb = scores['Neutral'] || 0;
     const combinedPornHentai = pornProb + hentaiProb;
 
-    // Reglas solicitadas:
-    // Porn o Hentai suma o probabilidad > 0.25 (25%)
-    // Sexy > 0.60 (60%)
-    const isPornOrHentai = pornProb >= 0.25 || hentaiProb >= 0.25 || combinedPornHentai >= 0.25;
-    const isSexy = sexyProb >= 0.60;
+    console.info('Evaluando scores de seguridad:', scores);
+
+    // Umbrales estrictos para muro universitario de graduación:
+    // Porn >= 15% o Hentai >= 15% o suma >= 18%
+    // Sexy >= 38% o (Sexy >= 25% si Neutral es bajo < 45%)
+    const isPornOrHentai = pornProb >= 0.15 || hentaiProb >= 0.15 || combinedPornHentai >= 0.18;
+    const isSexy = sexyProb >= 0.38 || (sexyProb >= 0.25 && neutralProb < 0.45);
 
     if (isPornOrHentai || isSexy) {
       return {
         safe: false,
         reason: isPornOrHentai
-          ? `Contenido sexual explícito detectado (${Math.round(Math.max(pornProb, hentaiProb, combinedPornHentai) * 100)}%)`
-          : `Contenido sugerente/sexy no apto para graduación (${Math.round(sexyProb * 100)}%)`,
+          ? `Contenido sexual o desnudez explícita detectada (${Math.round(Math.max(pornProb, hentaiProb, combinedPornHentai) * 100)}%)`
+          : `Contenido sugerente o no apto para graduación (${Math.round(sexyProb * 100)}%)`,
         scores
       };
     }
@@ -1020,15 +1097,43 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const scanImageWithAI = async (imgElement) => {
+    // 1. Análisis de Gore, Sangre y Violencia
+    const goreCheck = scanGoreAndViolence(imgElement);
+    if (!goreCheck.safe) {
+      return goreCheck;
+    }
+
+    // 2. Análisis con Red Neuronal NSFWJS
     const model = await loadNSFWModel();
-    if (!model) return { safe: true, unverified: true };
-    const predictions = await model.classify(imgElement);
-    return evaluatePredictions(predictions);
+    if (!model) {
+      return {
+        safe: false,
+        unverified: true,
+        reason: 'El filtro de IA no se pudo inicializar. Por seguridad comunitaria, recarga la página para verificar la imagen.'
+      };
+    }
+
+    try {
+      const predictions = await model.classify(imgElement);
+      return evaluatePredictions(predictions);
+    } catch (classifyErr) {
+      console.error('Error al clasificar imagen con modelo de IA:', classifyErr);
+      return {
+        safe: false,
+        reason: 'Error al procesar los píxeles de la imagen con el modelo de seguridad.'
+      };
+    }
   };
 
   const scanVideoWithAI = async (videoFile, onProgress) => {
     const model = await loadNSFWModel();
-    if (!model) return { safe: true, unverified: true };
+    if (!model) {
+      return {
+        safe: false,
+        unverified: true,
+        reason: 'El filtro de IA no se pudo inicializar. Por seguridad comunitaria, recarga la página para verificar el video.'
+      };
+    }
 
     return new Promise((resolve) => {
       const video = document.createElement('video');
@@ -1074,6 +1179,19 @@ document.addEventListener('DOMContentLoaded', () => {
           });
 
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          // Escaneo de Gore en fotograma
+          const goreCheck = scanGoreAndViolence(canvas);
+          if (!goreCheck.safe) {
+            cleanup();
+            return resolve({
+              safe: false,
+              reason: `Fotograma ${i + 1} de 6 (${goreCheck.reason})`,
+              frameIndex: i + 1
+            });
+          }
+
+          // Escaneo con IA en fotograma
           try {
             const predictions = await model.classify(canvas);
             const check = evaluatePredictions(predictions);
@@ -1096,7 +1214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       video.onerror = () => {
         cleanup();
-        resolve({ safe: true, unverified: true });
+        resolve({ safe: false, reason: 'Error al cargar el video para inspección.' });
       };
     });
   };
@@ -1113,9 +1231,12 @@ document.addEventListener('DOMContentLoaded', () => {
     'porno', 'porn', 'xxx', 'hentai', 'nsfw', 'nudes', 'nude', 'desnudo', 'desnuda', 'desnudos',
     'gemido', 'gemidos', 'erotico', 'erotica', 'eroticos', 'erotismo', 'sexo', 'sexual', 'sexuales',
     'tetas', 'chichis', 'boobs', 'penis', 'pene', 'verga', 'pito', 'vagina', 'culo', 'ass',
-    'onlyfans', 'pack', 'gore', 'follar', 'cojer', 'coger', 'mamada', 'blowjob', 'puta', 'puto',
-    'whore', 'slut', 'dildo', 'consolador', 'zoofilia', 'pedofilia', 'incesto', 'milf', 'anal',
-    'masturbar', 'masturbacion', 'cumshot', 'semen', 'bukkake', 'orgasmo', 'orgasmos'
+    'onlyfans', 'pack', 'gore', 'sangre', 'blood', 'muerte', 'dead', 'matanza', 'decapitado',
+    'degollado', 'visceras', 'violencia', 'asesinato', 'suicidio', 'herida', 'mutilacion',
+    'cadaver', 'accidente', 'balazo', 'corte', 'tortura', 'snuff', 'follar', 'cojer', 'coger',
+    'mamada', 'blowjob', 'puta', 'puto', 'whore', 'slut', 'dildo', 'consolador', 'zoofilia',
+    'pedofilia', 'incesto', 'milf', 'anal', 'masturbar', 'masturbacion', 'cumshot', 'semen',
+    'bukkake', 'orgasmo', 'orgasmos'
   ];
 
   const checkExplicitText = (text) => {
@@ -1263,9 +1384,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!check.safe) {
             showModerationAlert(
               '⚠️ Contenido bloqueado',
-              'El sistema detectó contenido explícito o inapropiado. Este es un muro de recuerdos universitarios.'
+              check.reason || 'El sistema detectó contenido explícito o inapropiado. Este es un muro de recuerdos universitarios.'
             );
-            showToast('⚠️ Imagen bloqueada por contenido explícito.');
+            showToast('⚠️ Imagen bloqueada: ' + (check.reason || 'Contenido no permitido'));
             clearFileSelection();
             return;
           }
@@ -1275,9 +1396,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (scanErr) {
           console.warn('Error en verificación de imagen:', scanErr);
           isModerating = false;
-          fileModerationPassed = true;
-          showModerationStatus('✅ Contenido verificado', true);
-          if (submitBtn) submitBtn.disabled = false;
+          fileModerationPassed = false;
+          showModerationAlert(
+            '⚠️ No se pudo verificar la imagen',
+            'Ocurrió un error al procesar el filtro de seguridad. Por protección comunitaria, intenta seleccionarla nuevamente.'
+          );
+          if (submitBtn) submitBtn.disabled = true;
+          clearFileSelection();
         }
       } else {
         const objectUrl = URL.createObjectURL(file);
@@ -1302,9 +1427,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!check.safe) {
               showModerationAlert(
                 '⚠️ Contenido bloqueado',
-                'El sistema detectó contenido explícito o inapropiado. Este es un muro de recuerdos universitarios.'
+                check.reason || 'El sistema detectó contenido explícito o inapropiado. Este es un muro de recuerdos universitarios.'
               );
-              showToast('⚠️ Imagen bloqueada por contenido explícito.');
+              showToast('⚠️ Imagen bloqueada: ' + (check.reason || 'Contenido no permitido'));
               clearFileSelection();
               return;
             }
@@ -1314,9 +1439,13 @@ document.addEventListener('DOMContentLoaded', () => {
           } catch (scanErr) {
             console.warn('Error en verificación de imagen:', scanErr);
             isModerating = false;
-            fileModerationPassed = true;
-            showModerationStatus('✅ Contenido verificado', true);
-            if (submitBtn) submitBtn.disabled = false;
+            fileModerationPassed = false;
+            showModerationAlert(
+              '⚠️ No se pudo verificar la imagen',
+              'Ocurrió un error al procesar el filtro de seguridad. Por protección comunitaria, intenta seleccionarla nuevamente.'
+            );
+            if (submitBtn) submitBtn.disabled = true;
+            clearFileSelection();
           }
         };
         scanImg.src = objectUrl;
@@ -1371,9 +1500,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }).catch((err) => {
         console.warn('Error en escaneo de video:', err);
         isModerating = false;
-        fileModerationPassed = true;
-        showModerationStatus('✅ Video verificado', true);
-        if (submitBtn) submitBtn.disabled = false;
+        fileModerationPassed = false;
+        showModerationAlert(
+          '⚠️ No se pudo verificar el video',
+          'Ocurrió un error al procesar los fotogramas del video con el filtro de seguridad. Por protección comunitaria, intenta con otro video o clip.'
+        );
+        if (submitBtn) submitBtn.disabled = true;
+        clearFileSelection();
       });
     }
 
