@@ -691,6 +691,44 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    // Adaptación automática y detección de relación de aspecto (vertical/horizontal/cuadrada)
+    const videoPlayer = card.querySelector('video.card-video-player');
+    if (videoPlayer) {
+      videoPlayer.addEventListener('loadedmetadata', () => {
+        const vH = videoPlayer.videoHeight;
+        const vW = videoPlayer.videoWidth;
+        const vContainer = videoPlayer.closest('.card-video-container');
+        if (vH > vW) {
+          card.classList.add('media-portrait');
+          if (vContainer) vContainer.classList.add('aspect-vertical', 'is-portrait');
+        } else {
+          card.classList.add('media-landscape');
+          if (vContainer) vContainer.classList.add('is-landscape');
+        }
+      });
+    }
+
+    const imgElem = card.querySelector('.card-image');
+    if (imgElem) {
+      const detectImgAspect = () => {
+        if (!imgElem.naturalHeight || !imgElem.naturalWidth) return;
+        if (imgElem.naturalHeight > imgElem.naturalWidth) {
+          card.classList.add('media-portrait');
+          const imgContainer = imgElem.closest('.card-image-container');
+          if (imgContainer) imgContainer.classList.add('is-portrait');
+        } else {
+          card.classList.add('media-landscape');
+          const imgContainer = imgElem.closest('.card-image-container');
+          if (imgContainer) imgContainer.classList.add('is-landscape');
+        }
+      };
+      if (imgElem.complete && imgElem.naturalHeight) {
+        detectImgAspect();
+      } else {
+        imgElem.addEventListener('load', detectImgAspect);
+      }
+    }
+
     return card;
   };
 
