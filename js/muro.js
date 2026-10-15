@@ -269,6 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             posts = merged;
+            // Sincronizar en segundo plano recuerdos pendientes guardados localmente
+            syncPendingLocalPosts();
           }
         } catch (jsonErr) {
           console.warn('Google Apps Script requiere que la implementación esté en "Quién tiene acceso: Cualquiera".');
@@ -280,6 +282,50 @@ document.addEventListener('DOMContentLoaded', () => {
       if (boardLoading) boardLoading.style.display = 'none';
       renderBoard();
     }
+  };
+
+  /* Helper para subir recuerdos que quedaron guardados localmente cuando Google Apps Script estuvo sin acceso */
+  const syncPendingLocalPosts = async () => {
+    try {
+      const localPosts = await getLocalMemories();
+      const pending = localPosts.filter(p => p.fileId === 'uploaded-local' && p.blob);
+      if (pending.length === 0) return;
+
+      console.info(`Intentando sincronizar ${pending.length} recuerdo(s) pendiente(s) a Google Drive...`);
+      for (const p of pending) {
+        try {
+          const b64 = await readFileAsBase64(p.blob);
+          const payload = {
+            action: 'upload',
+            autor: p.autor,
+            titulo: p.titulo,
+            categoria: p.categoria,
+            fileName: (p.blob && p.blob.name) || 'recuerdo',
+            mimeType: p.mimeType || (p.blob && p.blob.type) || 'video/mp4',
+            base64: b64
+          };
+          const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          });
+          if (response.ok) {
+            const resText = await response.text();
+            try {
+              const resData = JSON.parse(resText);
+              if (resData && (resData.fileId || resData.success)) {
+                const cloudId = resData.fileId || 'synced';
+                p.fileId = cloudId;
+                await updateLocalMemory(p.id, { fileId: cloudId });
+                console.info('Recuerdo pendiente sincronizado con Google Drive exitosamente:', cloudId);
+              }
+            } catch (_) {}
+          }
+        } catch (subErr) {
+          console.warn('Reintento de sincronización pendiente pospuesto:', subErr);
+        }
+      }
+    } catch (_) {}
   };
 
   /* ------------------------------------------------------------------------
