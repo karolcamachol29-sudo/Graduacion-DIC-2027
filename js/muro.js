@@ -1153,12 +1153,12 @@ document.addEventListener('DOMContentLoaded', () => {
         scanImg.src = objectUrl;
       }
     } else if (isVideo) {
-      if (file.size > 16 * 1024 * 1024) {
+      if (file.size > 35 * 1024 * 1024) {
         showModerationAlert(
-          '⚠️ Video demasiado pesado para la nube',
-          `El video seleccionado pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB. Para que Google Apps Script y Google Drive puedan guardarlo y que todos los compañeros puedan reproducirlo en sus teléfonos sin cortes, el video debe pesar máximo 15 MB. Por favor recórtalo o comprímelo.`
+          '⚠️ Video demasiado pesado',
+          `El video seleccionado pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB. El límite máximo permitido para videos es de 35 MB. Por favor recórtalo o comprímelo.`
         );
-        showToast('⚠️ El video debe ser menor a 15 MB para sincronizarse en la nube.');
+        showToast('⚠️ El video no debe superar los 35 MB.');
         clearFileSelection();
         return;
       }
