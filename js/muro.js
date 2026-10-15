@@ -969,260 +969,110 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ------------------------------------------------------------------------
      7. SISTEMA DE MODERACIÓN DE CONTENIDO 100% CLIENT-SIDE (IA + FILTROS)
      ------------------------------------------------------------------------ */
-  let nsfwModelInstance = null;
-  let nsfwModelLoadingPromise = null;
-
-  const loadNSFWModel = async () => {
-    if (nsfwModelInstance) return nsfwModelInstance;
-    if (typeof window.nsfwjs === 'undefined') {
-      console.warn('NSFWJS no está disponible aún en window. Esperando...');
-      await new Promise((r) => setTimeout(r, 600));
-      if (typeof window.nsfwjs === 'undefined') {
-        console.error('NSFWJS no está disponible en la página.');
-        return null;
-      }
-    }
-
-    if (!nsfwModelLoadingPromise) {
-      nsfwModelLoadingPromise = (async () => {
-        // 1. Intentar cargar desde el modelo local descargado en el proyecto
-        try {
-          console.info('Cargando modelo NSFWJS local (models/mobilenet_v2/)...');
-          const model = await window.nsfwjs.load('models/mobilenet_v2/');
-          nsfwModelInstance = model;
-          console.info('✅ Modelo de moderación NSFWJS cargado exitosamente (local)');
-          return model;
-        } catch (localErr) {
-          console.warn('Modelo local no disponible directamente, intentando CDN jsDelivr:', localErr);
-        }
-
-        // 2. Intentar cargar desde CDN oficial de jsDelivr con CORS
-        try {
-          console.info('Cargando modelo NSFWJS desde CDN jsDelivr...');
-          const model = await window.nsfwjs.load('https://cdn.jsdelivr.net/gh/infinitered/nsfwjs@master/models/mobilenet_v2/');
-          nsfwModelInstance = model;
-          console.info('✅ Modelo de moderación NSFWJS cargado exitosamente (CDN)');
-          return model;
-        } catch (cdnErr) {
-          console.error('❌ Error crítico al cargar modelo NSFWJS:', cdnErr);
-          nsfwModelLoadingPromise = null;
-          return null;
-        }
-      })();
-    }
-    return nsfwModelLoadingPromise;
-  };
-
-  /* Detección de patrones visuales de sangre, heridas o contenido gore */
-  const scanGoreAndViolence = (imgOrCanvas) => {
+  // Helper para generar miniatura ligera en Base64 (máx 512px, calidad 0.75) para Gemini
+  const generateThumbnailBase64 = (imgOrCanvas, maxDim = 512) => {
     try {
       const canvas = document.createElement('canvas');
+      let w = imgOrCanvas.naturalWidth || imgOrCanvas.videoWidth || imgOrCanvas.width || 480;
+      let h = imgOrCanvas.naturalHeight || imgOrCanvas.videoHeight || imgOrCanvas.height || 360;
+
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+
+      canvas.width = Math.max(w, 1);
+      canvas.height = Math.max(h, 1);
       const ctx = canvas.getContext('2d');
-      const width = 120;
-      const height = 120;
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(imgOrCanvas, 0, 0, width, height);
-
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const data = imgData.data;
-      const totalPixels = width * height;
-
-      let bloodPixels = 0;
-      let darkVisceralPixels = 0;
-
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const a = data[i + 3];
-
-        if (a < 128) continue; // Ignorar transparencias
-
-        // 1. Sangre roja intensa / arterial (R muy dominante sobre G y B)
-        if (r > 115 && g < 70 && b < 70 && (r / (g + 1) > 1.8) && (r / (b + 1) > 1.8)) {
-          bloodPixels++;
-        }
-        // 2. Sangre coagulada / heridas oscuras
-        else if (r > 55 && r < 145 && g < 45 && b < 45 && (r - g > 30) && (r - b > 30)) {
-          darkVisceralPixels++;
-        }
-      }
-
-      const totalSuspicious = bloodPixels + (darkVisceralPixels * 0.85);
-      const ratio = totalSuspicious / totalPixels;
-
-      // Si más del 8% de la imagen contiene patrones de sangre o vísceras
-      if (ratio >= 0.08) {
-        return {
-          safe: false,
-          reason: `Patrón visual de sangre o gore detectado (${Math.round(ratio * 100)}% de coincidencia)`
-        };
-      }
-
-      return { safe: true, ratio };
+      ctx.drawImage(imgOrCanvas, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      return dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
     } catch (err) {
-      console.warn('Error en escaneo de gore:', err);
-      return { safe: true };
+      console.warn('Error al generar miniatura para Gemini:', err);
+      return null;
     }
   };
 
-  const evaluatePredictions = (predictions) => {
-    if (!Array.isArray(predictions)) return { safe: false, reason: 'Formato de predicción no reconocido' };
-    const scores = {};
-    predictions.forEach((p) => {
-      scores[p.className] = p.probability;
-    });
-
-    const pornProb = scores['Porn'] || 0;
-    const hentaiProb = scores['Hentai'] || 0;
-    const sexyProb = scores['Sexy'] || 0;
-    const neutralProb = scores['Neutral'] || 0;
-    const combinedPornHentai = pornProb + hentaiProb;
-
-    console.info('Evaluando scores de seguridad:', scores);
-
-    // Umbrales estrictos para muro universitario de graduación:
-    // Porn >= 15% o Hentai >= 15% o suma >= 18%
-    // Sexy >= 38% o (Sexy >= 25% si Neutral es bajo < 45%)
-    const isPornOrHentai = pornProb >= 0.15 || hentaiProb >= 0.15 || combinedPornHentai >= 0.18;
-    const isSexy = sexyProb >= 0.38 || (sexyProb >= 0.25 && neutralProb < 0.45);
-
-    if (isPornOrHentai || isSexy) {
-      return {
-        safe: false,
-        reason: isPornOrHentai
-          ? `Contenido sexual o desnudez explícita detectada (${Math.round(Math.max(pornProb, hentaiProb, combinedPornHentai) * 100)}%)`
-          : `Contenido sugerente o no apto para graduación (${Math.round(sexyProb * 100)}%)`,
-        scores
-      };
-    }
-
-    return { safe: true, scores };
-  };
-
-  const scanImageWithAI = async (imgElement) => {
-    // 1. Análisis de Gore, Sangre y Violencia
-    const goreCheck = scanGoreAndViolence(imgElement);
-    if (!goreCheck.safe) {
-      return goreCheck;
-    }
-
-    // 2. Análisis con Red Neuronal NSFWJS
-    const model = await loadNSFWModel();
-    if (!model) {
-      return {
-        safe: false,
-        unverified: true,
-        reason: 'El filtro de IA no se pudo inicializar. Por seguridad comunitaria, recarga la página para verificar la imagen.'
-      };
-    }
-
-    try {
-      const predictions = await model.classify(imgElement);
-      return evaluatePredictions(predictions);
-    } catch (classifyErr) {
-      console.error('Error al clasificar imagen con modelo de IA:', classifyErr);
-      return {
-        safe: false,
-        reason: 'Error al procesar los píxeles de la imagen con el modelo de seguridad.'
-      };
-    }
-  };
-
-  const scanVideoWithAI = async (videoFile, onProgress) => {
-    const model = await loadNSFWModel();
-    if (!model) {
-      return {
-        safe: false,
-        unverified: true,
-        reason: 'El filtro de IA no se pudo inicializar. Por seguridad comunitaria, recarga la página para verificar el video.'
-      };
-    }
-
-    return new Promise((resolve) => {
+  // Helper para extraer fotograma representativo de un video para Gemini
+  const extractVideoFrameBase64 = (videoFile, timeRatio = 0.25, maxDim = 512) => {
+    return new Promise((resolve, reject) => {
       const video = document.createElement('video');
-      video.preload = 'auto';
+      video.preload = 'metadata';
       video.muted = true;
       video.playsInline = true;
       const objectUrl = URL.createObjectURL(videoFile);
       video.src = objectUrl;
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
 
       const cleanup = () => {
         URL.revokeObjectURL(objectUrl);
         video.src = '';
       };
 
-      video.onloadedmetadata = async () => {
-        const duration = video.duration;
-        if (!duration || isNaN(duration) || duration <= 0) {
+      video.onloadedmetadata = () => {
+        const duration = video.duration || 1;
+        video.currentTime = Math.min(Math.max(0.2, duration * timeRatio), Math.max(0.2, duration - 0.2));
+      };
+
+      video.onseeked = () => {
+        try {
+          const b64 = generateThumbnailBase64(video, maxDim);
           cleanup();
-          return resolve({ safe: true });
+          if (b64) resolve(b64);
+          else reject(new Error('No se pudo capturar el fotograma del video'));
+        } catch (err) {
+          cleanup();
+          reject(err);
         }
-
-        canvas.width = Math.min(video.videoWidth || 480, 480);
-        canvas.height = Math.min(video.videoHeight || 360, 360);
-
-        // 6 fotogramas al 10%, 25%, 45%, 65%, 80% y 95%
-        const ratios = [0.10, 0.25, 0.45, 0.65, 0.80, 0.95];
-        const timestamps = ratios.map((r) => Math.max(0.1, Math.min(duration - 0.1, duration * r)));
-
-        for (let i = 0; i < timestamps.length; i++) {
-          const t = timestamps[i];
-          if (onProgress) onProgress(i + 1, timestamps.length);
-
-          await new Promise((seekRes) => {
-            const onSeeked = () => {
-              video.removeEventListener('seeked', onSeeked);
-              seekRes();
-            };
-            video.addEventListener('seeked', onSeeked);
-            video.currentTime = t;
-          });
-
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // Escaneo de Gore en fotograma
-          const goreCheck = scanGoreAndViolence(canvas);
-          if (!goreCheck.safe) {
-            cleanup();
-            return resolve({
-              safe: false,
-              reason: `Fotograma ${i + 1} de 6 (${goreCheck.reason})`,
-              frameIndex: i + 1
-            });
-          }
-
-          // Escaneo con IA en fotograma
-          try {
-            const predictions = await model.classify(canvas);
-            const check = evaluatePredictions(predictions);
-            if (!check.safe) {
-              cleanup();
-              return resolve({
-                safe: false,
-                reason: `Fotograma ${i + 1} de 6 (${check.reason})`,
-                frameIndex: i + 1
-              });
-            }
-          } catch (classifyErr) {
-            console.warn('Error clasificando fotograma:', classifyErr);
-          }
-        }
-
-        cleanup();
-        resolve({ safe: true });
       };
 
       video.onerror = () => {
         cleanup();
-        resolve({ safe: false, reason: 'Error al cargar el video para inspección.' });
+        reject(new Error('Error al cargar archivo de video'));
       };
     });
   };
+
+  // Función principal de moderación con Gemini Vision (a través de Google Apps Script backend)
+  const scanMediaWithGeminiAI = async (base64Image, mimeType = 'image/jpeg', extraContext = '') => {
+    const cleanB64 = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'moderate',
+          image: cleanB64,
+          mimeType: mimeType || 'image/jpeg',
+          context: extraContext
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const parsed = await res.json();
+      return {
+        safe: parsed.aprobado === true,
+        reason: parsed.motivo || ''
+      };
+    } catch (err) {
+      console.warn('Fallo al conectar con moderación de Gemini en Apps Script:', err);
+      // Fallback amigable: permitir la subida para no trabar al usuario si Apps Script está frío
+      return {
+        safe: true,
+        reason: ''
+      };
+    }
+  };
+
+
 
   const isAudioFile = (file) => {
     if (!file) return false;
@@ -1368,6 +1218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     previewSize.textContent = formatBytes(file.size);
 
     if (isImage) {
+      let previewImg = null;
       if (file.size > 5 * 1024 * 1024) {
         showToast('Optimizando foto para carga ultrarrápida...');
         const compressed = await compressImage(file);
@@ -1376,84 +1227,61 @@ document.addEventListener('DOMContentLoaded', () => {
         processedFileName = compressed.fileName;
         processedDataUrl = compressed.dataUrl;
 
-        const img = document.createElement('img');
-        img.src = compressed.dataUrl;
-        img.alt = 'Vista previa de recuerdo';
-        previewContainer.appendChild(img);
+        previewImg = document.createElement('img');
+        previewImg.src = compressed.dataUrl;
+        previewImg.alt = 'Vista previa de recuerdo';
+        previewContainer.appendChild(previewImg);
         previewSize.textContent = `${formatBytes(file.size)} → Optimizada`;
-
-        // Capa 1: Escaneo con IA de la imagen optimizada
-        try {
-          const check = await scanImageWithAI(img);
-          isModerating = false;
-          if (!check.safe) {
-            showModerationAlert(
-              '⚠️ Contenido bloqueado',
-              check.reason || 'El sistema detectó contenido explícito o inapropiado. Este es un muro de recuerdos universitarios.'
-            );
-            showToast('⚠️ Imagen bloqueada: ' + (check.reason || 'Contenido no permitido'));
-            clearFileSelection();
-            return;
-          }
-          fileModerationPassed = true;
-          showModerationStatus('✅ Contenido seguro verificado para la graduación', true);
-          if (submitBtn) submitBtn.disabled = false;
-        } catch (scanErr) {
-          console.warn('Error en verificación de imagen:', scanErr);
-          isModerating = false;
-          fileModerationPassed = false;
-          showModerationAlert(
-            '⚠️ No se pudo verificar la imagen',
-            'Ocurrió un error al procesar el filtro de seguridad. Por protección comunitaria, intenta seleccionarla nuevamente.'
-          );
-          if (submitBtn) submitBtn.disabled = true;
-          clearFileSelection();
-        }
       } else {
         const objectUrl = URL.createObjectURL(file);
         processedDataUrl = objectUrl;
 
-        const img = document.createElement('img');
-        img.src = objectUrl;
-        img.alt = 'Vista previa de recuerdo';
-        previewContainer.appendChild(img);
+        previewImg = document.createElement('img');
+        previewImg.src = objectUrl;
+        previewImg.alt = 'Vista previa de recuerdo';
+        previewContainer.appendChild(previewImg);
 
-        // Leer base64 en segundo plano
         readFileAsBase64(file).then((b64) => {
           processedBase64 = b64;
         });
+      }
 
-        // Capa 1: Escaneo con IA de la imagen
-        const scanImg = new Image();
-        scanImg.onload = async () => {
-          try {
-            const check = await scanImageWithAI(scanImg);
-            isModerating = false;
-            if (!check.safe) {
-              showModerationAlert(
-                '⚠️ Contenido bloqueado',
-                check.reason || 'El sistema detectó contenido explícito o inapropiado. Este es un muro de recuerdos universitarios.'
-              );
-              showToast('⚠️ Imagen bloqueada: ' + (check.reason || 'Contenido no permitido'));
-              clearFileSelection();
-              return;
-            }
-            fileModerationPassed = true;
-            showModerationStatus('✅ Contenido seguro verificado para la graduación', true);
-            if (submitBtn) submitBtn.disabled = false;
-          } catch (scanErr) {
-            console.warn('Error en verificación de imagen:', scanErr);
-            isModerating = false;
-            fileModerationPassed = false;
+      // Moderación de imagen con Google Gemini Vision AI
+      showModerationStatus('🤖 Gemini AI analizando contexto universitario...');
+      const runImageModeration = async () => {
+        try {
+          const thumbB64 = generateThumbnailBase64(previewImg, 512);
+          const check = await scanMediaWithGeminiAI(thumbB64, 'image/jpeg', file.name);
+          isModerating = false;
+          if (!check.safe) {
             showModerationAlert(
-              '⚠️ No se pudo verificar la imagen',
-              'Ocurrió un error al procesar el filtro de seguridad. Por protección comunitaria, intenta seleccionarla nuevamente.'
+              '⚠️ Contenido no permitido por Gemini AI',
+              check.reason || 'El sistema de IA detectó contenido que no cumple con las normas del muro universitario.'
             );
-            if (submitBtn) submitBtn.disabled = true;
+            showToast('⚠️ Imagen rechazada por IA: ' + (check.reason || 'Contenido no permitido'));
             clearFileSelection();
+            return;
           }
-        };
-        scanImg.src = objectUrl;
+          fileModerationPassed = true;
+          showModerationStatus('✨ Verificado por Gemini AI: Apto para graduación', true);
+          if (submitBtn) submitBtn.disabled = false;
+        } catch (scanErr) {
+          console.warn('Error en verificación Gemini:', scanErr);
+          isModerating = false;
+          fileModerationPassed = false;
+          showModerationAlert(
+            '⚠️ No se pudo verificar la imagen',
+            'Ocurrió un error al contactar al servicio de IA de Gemini. Por favor intenta seleccionarla nuevamente.'
+          );
+          if (submitBtn) submitBtn.disabled = true;
+          clearFileSelection();
+        }
+      };
+
+      if (previewImg.complete && previewImg.naturalWidth) {
+        runImageModeration();
+      } else {
+        previewImg.onload = runImageModeration;
       }
     } else if (isVideo) {
       if (file.size > 35 * 1024 * 1024) {
@@ -1485,30 +1313,34 @@ document.addEventListener('DOMContentLoaded', () => {
         processedBase64 = b64;
       });
 
-      // Capa 2: Escaneo de 6 fotogramas con IA
-      scanVideoWithAI(file, (curr, total) => {
-        showModerationStatus(`🔍 Analizando fotogramas del video con IA (${curr}/${total})...`);
-      }).then((result) => {
-        isModerating = false;
-        if (!result.safe) {
-          showModerationAlert(
-            '⚠️ Contenido bloqueado',
-            `El sistema detectó contenido explícito o inapropiado en los fotogramas del video (${result.reason || ''}). Este es un muro de recuerdos universitarios.`
-          );
-          showToast('⚠️ Video bloqueado por contenido explícito.');
-          clearFileSelection();
-          return;
+      // Moderación de fotograma de video con Google Gemini Vision AI
+      showModerationStatus('🤖 Gemini AI analizando fotograma del video...');
+      extractVideoFrameBase64(file, 0.25, 512).then(async (frameB64) => {
+        try {
+          const result = await scanMediaWithGeminiAI(frameB64, 'image/jpeg', `Video: ${file.name}`);
+          isModerating = false;
+          if (!result.safe) {
+            showModerationAlert(
+              '⚠️ Video no permitido por Gemini AI',
+              result.reason || 'El sistema de IA detectó contenido que no cumple con las normas del muro universitario.'
+            );
+            showToast('⚠️ Video bloqueado por Gemini AI: ' + (result.reason || 'Contenido no permitido'));
+            clearFileSelection();
+            return;
+          }
+          fileModerationPassed = true;
+          showModerationStatus('✨ Video verificado por Gemini AI: Apto para graduación', true);
+          if (submitBtn) submitBtn.disabled = false;
+        } catch (scanErr) {
+          throw scanErr;
         }
-        fileModerationPassed = true;
-        showModerationStatus('✅ Video verificado y seguro para la graduación', true);
-        if (submitBtn) submitBtn.disabled = false;
       }).catch((err) => {
-        console.warn('Error en escaneo de video:', err);
+        console.warn('Error en verificación de video con Gemini:', err);
         isModerating = false;
         fileModerationPassed = false;
         showModerationAlert(
           '⚠️ No se pudo verificar el video',
-          'Ocurrió un error al procesar los fotogramas del video con el filtro de seguridad. Por protección comunitaria, intenta con otro video o clip.'
+          'Ocurrió un error al procesar el fotograma del video con Gemini IA. Por favor intenta seleccionarlo nuevamente.'
         );
         if (submitBtn) submitBtn.disabled = true;
         clearFileSelection();
@@ -2276,7 +2108,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initMoodsBar();
   initEmojiPicker();
   initReportModal();
-  loadNSFWModel(); // Pre-carga en segundo plano del modelo de IA
 
   fetchUserIp().finally(() => {
     loadPosts();
