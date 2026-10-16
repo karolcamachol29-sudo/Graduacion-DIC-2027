@@ -6,8 +6,8 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Configuración del endpoint de Google Apps Script
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby-CGPGNkA1s8Ym_IUylbeDaUSCkeg5xzzyz1sbWJVlXnCERDSv5C7ZCcRar0zvv4xe/exec';
+  // Configuración del endpoint de Google Apps Script (Conectado a Google Drive y Sheets de graduación)
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZk_GWEynAsmitvE5l8tpE4Na5MUMFoJuAiQv5YgdF6isTWxC-Mr_1CWgaXjy_N3bQ/exec';
 
   // Elementos DOM principales
   const masonryBoard = document.getElementById('masonry-board');
@@ -247,18 +247,29 @@ document.addEventListener('DOMContentLoaded', () => {
      2. OBTENCIÓN DE IDENTIFICADOR / IP PÚBLICA
      ------------------------------------------------------------------------ */
   const fetchUserIp = async () => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
-      const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (res.ok) {
-        const data = await res.json();
-        userIp = data.ip;
-      }
-    } catch (e) {
-      console.info('Usando identificador local de visitante:', visitorId);
+    const endpoints = [
+      'https://api.ipify.org?format=json',
+      'https://api64.ipify.org?format=json',
+      'https://ipapi.co/json/'
+    ];
+
+    for (const url of endpoints) {
+      if (userIp && userIp !== visitorId) break;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && (data.ip || data.query)) {
+            userIp = String(data.ip || data.query).trim();
+            break;
+          }
+        }
+      } catch (_) {}
     }
+
     if (!userIp) {
       userIp = visitorId;
     }
@@ -310,7 +321,12 @@ document.addEventListener('DOMContentLoaded', () => {
             remotePosts.forEach((rp) => {
               const localChoice = userReactionsMap[rp.id] || (rp.fileId ? userReactionsMap[rp.fileId] : null) || (likedPostsLocal.includes(rp.id) || (rp.fileId && likedPostsLocal.includes(rp.fileId)) ? '❤️' : null);
               rp.reactions = rp.reactions || {};
-              rp.ips_likes = rp.ips_likes || [];
+              rp.ips_likes = Array.isArray(rp.ips_likes) 
+                ? rp.ips_likes 
+                : (rp.ips_likes ? String(rp.ips_likes).split(',').map(s => s.trim()).filter(Boolean) : []);
+
+              // Total de likes es al menos la cantidad de IPs registradas
+              rp.likes = Math.max(Number(rp.likes) || 0, rp.ips_likes.length, 1);
 
               // Si el usuario reaccionó localmente pero en la nube aún no aparece su IP
               if (localChoice && myIdentifier && !rp.ips_likes.includes(myIdentifier)) {
@@ -767,6 +783,13 @@ document.addEventListener('DOMContentLoaded', () => {
       post.reactions['❤️'] = post.likes;
     }
 
+    post.ips_likes = Array.isArray(post.ips_likes) 
+      ? [...post.ips_likes] 
+      : (post.ips_likes ? String(post.ips_likes).split(',').map(s => s.trim()).filter(Boolean) : []);
+    
+    const currentMyId = userIp || visitorId;
+    const ipAlreadyRegistered = currentMyId && post.ips_likes.includes(currentMyId);
+
     if (prevEmoji) {
       // Cambio de emoción previa
       if (post.reactions[prevEmoji] > 0) {
@@ -774,7 +797,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       // Primera reacción del usuario a esta publicación
-      post.likes = (post.likes || 0) + 1;
+      if (!ipAlreadyRegistered && currentMyId) {
+        post.ips_likes.push(currentMyId);
+      }
+      post.likes = Math.max((Number(post.likes) || 0) + 1, post.ips_likes.length, 1);
       if (!likedPostsLocal.includes(post.id)) {
         likedPostsLocal.push(post.id);
       }
@@ -798,7 +824,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .filter(([_, count]) => count > 0)
         .sort((a, b) => b[1] - a[1]);
 
-      const totalCount = Math.max(post.likes || 0, reactionEntries.reduce((sum, [_, c]) => sum + c, 0));
+      const totalCount = Math.max(post.likes || 0, post.ips_likes.length, reactionEntries.reduce((sum, [_, c]) => sum + c, 0));
       post.likes = totalCount;
 
       const countSpan = badge.querySelector('.reaction-count');
@@ -818,11 +844,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showToast(`¡Reaccionaste con ${emoji}! ✨`);
 
-    // Persistir localmente en IndexedDB
+    // Persistir localmente en IndexedDB acumulando la lista de IPs
     await updateLocalMemory(post.id, {
       likes: post.likes,
       reactions: post.reactions,
-      ips_likes: [userIp || visitorId]
+      ips_likes: post.ips_likes
     });
 
     // Enviar en segundo plano a Google Apps Script y reconciliar con datos de Sheets
@@ -847,7 +873,11 @@ document.addEventListener('DOMContentLoaded', () => {
           if (resJson && resJson.likes !== undefined) {
             post.likes = resJson.likes;
             if (resJson.reactions) post.reactions = resJson.reactions;
-            if (resJson.ips_likes) post.ips_likes = resJson.ips_likes;
+            if (resJson.ips_likes) {
+              post.ips_likes = Array.isArray(resJson.ips_likes)
+                ? resJson.ips_likes
+                : String(resJson.ips_likes).split(',').map(s => s.trim()).filter(Boolean);
+            }
 
             await updateLocalMemory(post.id, {
               likes: post.likes,
@@ -1647,7 +1677,8 @@ document.addEventListener('DOMContentLoaded', () => {
           categoria: categoria,
           fileName: processedFileName || selectedFile.name,
           mimeType: processedMimeType || selectedFile.type,
-          base64: processedBase64
+          base64: processedBase64,
+          ip: userIp || visitorId
         };
 
         try {
@@ -1667,8 +1698,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 cloudSynced = true;
                 if (resData.fileId) {
                   newPost.fileId = resData.fileId;
+                  if (resData.id) newPost.id = resData.id;
                   await updateLocalMemory(newPost.id, { fileId: resData.fileId });
                   console.log('Sincronizado con Google Drive exitosamente:', resData.fileId);
+                  renderBoard();
                 }
               } else if (resData && resData.error) {
                 cloudError = resData.error;
