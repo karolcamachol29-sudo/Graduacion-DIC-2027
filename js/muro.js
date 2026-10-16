@@ -7,7 +7,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   // Configuración del endpoint de Google Apps Script (Conectado a Google Drive y Sheets de graduación)
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZk_GWEynAsmitvE5l8tpE4Na5MUMFoJuAiQv5YgdF6isTWxC-Mr_1CWgaXjy_N3bQ/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyP1O8td1ANYmgvu_lqyBrPFS22TkC0ba0kw4nu_iqOmDqkXK734z_O_XP6u64dj5j2/exec';
 
   // Elementos DOM principales
   const masonryBoard = document.getElementById('masonry-board');
