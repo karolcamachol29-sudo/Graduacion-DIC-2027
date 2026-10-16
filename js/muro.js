@@ -395,7 +395,9 @@ document.addEventListener('DOMContentLoaded', () => {
             categoria: p.categoria,
             fileName: (p.blob && p.blob.name) || 'recuerdo',
             mimeType: p.mimeType || (p.blob && p.blob.type) || 'video/mp4',
-            base64: b64
+            base64: b64,
+            fileData: b64,
+            ip: userIp || visitorId
           };
           const response = await fetch(SCRIPT_URL, {
             method: 'POST',
@@ -1678,6 +1680,7 @@ document.addEventListener('DOMContentLoaded', () => {
           fileName: processedFileName || selectedFile.name,
           mimeType: processedMimeType || selectedFile.type,
           base64: processedBase64,
+          fileData: processedBase64,
           ip: userIp || visitorId
         };
 
