@@ -6,8 +6,8 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Configuración del endpoint de Google Apps Script (Conectado a Google Drive y Sheets de graduación)
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyP1O8td1ANYmgvu_lqyBrPFS22TkC0ba0kw4nu_iqOmDqkXK734z_O_XP6u64dj5j2/exec';
+  // Configuración del endpoint verificado de Google Apps Script (Conectado a Google Drive y Sheets de graduación)
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZk_GWEynAsmitvE5l8tpE4Na5MUMFoJuAiQv5YgdF6isTWxC-Mr_1CWgaXjy_N3bQ/exec';
 
   // Elementos DOM principales
   const masonryBoard = document.getElementById('masonry-board');
@@ -1085,90 +1085,93 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // Función principal de moderación con Gemini Vision (Doble Escudo: Gemini 3.6 Flash directo + Apps Script fallback)
+  // Función principal de moderación con Gemini Vision (Doble Escudo: Gemini Vision directo multi-modelo + Apps Script fallback)
   const scanMediaWithGeminiAI = async (base64Image, mimeType = 'image/jpeg', extraContext = '') => {
     const cleanB64 = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
     const cleanMime = (mimeType || 'image/jpeg').split(';')[0];
 
     // Clave de API protegida en base64 para evitar detecciones de Git Push Protection
     const GEMINI_DIRECT_KEY = atob('QVEuQWI4Uk42Smc3TVBFQ0N6ZHVYeDR4UlNUaGhpdmVPVkNDZkhzekZaM1ZpU2Etb1FTUEE=');
-    const GEMINI_DIRECT_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
+    const AVAILABLE_MODELS = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
 
-    // 1. Escudo Primario: Llamada directa a Gemini 3.6 Flash (Respuesta ultra-rápida en ~1s, independiente de Apps Script)
-    try {
-      const geminiBody = {
-        contents: [{
-          parts: [
-            {
-              inline_data: {
-                mime_type: cleanMime,
-                data: cleanB64
+    // 1. Escudo Primario: Llamada directa a Gemini Vision AI con tolerancia a fallos multi-modelo
+    for (const modelName of AVAILABLE_MODELS) {
+      try {
+        const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+        const geminiBody = {
+          contents: [{
+            parts: [
+              {
+                inline_data: {
+                  mime_type: cleanMime,
+                  data: cleanB64
+                }
+              },
+              {
+                text: "Eres el moderador oficial de seguridad de un muro de graduación universitaria. Analiza la imagen minuciosamente.\n" +
+                      "DEBES RECHAZAR OBLIGATORIAMENTE si la imagen contiene:\n" +
+                      "1. Desnudos totales o parciales, genitales, glúteos al descubierto, senos descubiertos, ropa interior explícita, lencería provocativa o poses de insinuación sexual o erotismo explícito.\n" +
+                      "2. Pornografía, hentai, o contenido de adultos.\n" +
+                      "3. Violencia explícita, sangre, armas de fuego, heridas o contenido gore.\n" +
+                      "4. Consumo visible de drogas ilegales o estupefacientes.\n\n" +
+                      "Si detectas alguno de estos elementos prohibidos, responde estrictamente con este JSON:\n" +
+                      "{\"aprobado\": false, \"motivo\": \"Se detectó contenido no permitido (desnudez o contenido explícito). No apto para el muro universitario.\"}\n\n" +
+                      "Si es una foto estudiantil, de graduación, familiar, de amigos o festiva sin ningún contenido indebido, responde estrictamente con este JSON:\n" +
+                      "{\"aprobado\": true, \"motivo\": \"Aprobado\"}\n\n" +
+                      "Responde única y exclusivamente con ese objeto JSON válido, sin bloques de código ni texto adicional."
               }
-            },
-            {
-              text: "Eres el moderador oficial de seguridad de un muro de graduación universitaria. Analiza la imagen minuciosamente.\n" +
-                    "DEBES RECHAZAR OBLIGATORIAMENTE si la imagen contiene:\n" +
-                    "1. Desnudos totales o parciales, genitales, glúteos al descubierto, senos descubiertos, ropa interior explícita, lencería provocativa o poses de insinuación sexual o erotismo explícito.\n" +
-                    "2. Pornografía, hentai, o contenido de adultos.\n" +
-                    "3. Violencia explícita, sangre, armas de fuego, heridas o contenido gore.\n" +
-                    "4. Consumo visible de drogas ilegales o estupefacientes.\n\n" +
-                    "Si detectas alguno de estos elementos prohibidos, responde estrictamente con este JSON:\n" +
-                    "{\"aprobado\": false, \"motivo\": \"Se detectó contenido no permitido (desnudez o contenido explícito). No apto para el muro universitario.\"}\n\n" +
-                    "Si es una foto estudiantil, de graduación, familiar, de amigos o festiva sin ningún contenido indebido, responde estrictamente con este JSON:\n" +
-                    "{\"aprobado\": true, \"motivo\": \"Aprobado\"}\n\n" +
-                    "Responde única y exclusivamente con ese objeto JSON válido, sin bloques de código ni texto adicional."
-            }
-          ]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.1
-        }
-      };
+            ]
+          }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.1
+          }
+        };
 
-      const directRes = await fetch(GEMINI_DIRECT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_DIRECT_KEY
-        },
-        body: JSON.stringify(geminiBody)
-      });
+        const directRes = await fetch(directUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': GEMINI_DIRECT_KEY
+          },
+          body: JSON.stringify(geminiBody)
+        });
 
-      if (directRes.ok) {
-        const directData = await directRes.json();
+        if (directRes.ok) {
+          const directData = await directRes.json();
 
-        // Si los filtros internos de seguridad de Google bloquearon la imagen directamente
-        if (directData.promptFeedback && directData.promptFeedback.blockReason) {
-          return {
-            safe: false,
-            reason: 'Bloqueado por filtros de seguridad de Google: contenido inapropiado o sensible detectado.'
-          };
-        }
-
-        const cand = directData.candidates && directData.candidates[0];
-        if (cand) {
-          if (cand.finishReason === 'SAFETY' || cand.finishReason === 'BLOCKLIST') {
+          // Si los filtros internos de seguridad de Google bloquearon la imagen directamente
+          if (directData.promptFeedback && directData.promptFeedback.blockReason) {
             return {
               safe: false,
-              reason: 'Bloqueado por filtros de seguridad de Google: contenido sensible detectado.'
+              reason: 'Bloqueado por filtros de seguridad de Google: contenido inapropiado o sensible detectado.'
             };
           }
-          if (cand.content && cand.content.parts && cand.content.parts[0]) {
-            const rawText = cand.content.parts[0].text || '{}';
-            const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            try {
-              const parsed = JSON.parse(cleanJson);
+
+          const cand = directData.candidates && directData.candidates[0];
+          if (cand) {
+            if (cand.finishReason === 'SAFETY' || cand.finishReason === 'BLOCKLIST') {
               return {
-                safe: parsed.aprobado === true,
-                reason: parsed.motivo || (parsed.aprobado ? 'Aprobado' : 'Contenido no permitido')
+                safe: false,
+                reason: 'Bloqueado por filtros de seguridad de Google: contenido sensible detectado.'
               };
-            } catch (_) {}
+            }
+            if (cand.content && cand.content.parts && cand.content.parts[0]) {
+              const rawText = cand.content.parts[0].text || '{}';
+              const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+              try {
+                const parsed = JSON.parse(cleanJson);
+                return {
+                  safe: parsed.aprobado === true,
+                  reason: parsed.motivo || (parsed.aprobado ? 'Aprobado' : 'Contenido no permitido')
+                };
+              } catch (_) {}
+            }
           }
         }
+      } catch (directErr) {
+        console.warn(`Escudo de Gemini (${modelName}) falló, probando alternativa...`, directErr);
       }
-    } catch (directErr) {
-      console.warn('Escudo directo de Gemini no respondió, intentando fallback por Apps Script...', directErr);
     }
 
     // 2. Escudo Secundario: Google Apps Script Backend (si está activo el endpoint)
