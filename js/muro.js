@@ -561,7 +561,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let html = `<div class="card-media-wrapper">`;
     if (isVideo) {
-      const videoDirectSrc = post.urlFallback || (hasValidDriveId ? `https://drive.google.com/uc?export=download&id=${resolvedDriveId}` : '');
+      const driveDirectVideo = hasValidDriveId 
+        ? `https://drive.usercontent.google.com/download?id=${resolvedDriveId}&export=download` 
+        : '';
+      const videoDirectSrc = post.urlFallback || driveDirectVideo;
       const posterSrc = hasValidDriveId ? `https://lh3.googleusercontent.com/d/${resolvedDriveId}` : '';
       const drivePreviewSrc = hasValidDriveId ? `https://drive.google.com/file/d/${resolvedDriveId}/preview` : '';
 
@@ -673,13 +676,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="reaction-picker-bubble" role="toolbar" aria-label="Elegir reacción">
             <button type="button" class="bubble-emoji-btn" data-emoji="❤️" title="Me encanta">❤️</button>
             <button type="button" class="bubble-emoji-btn" data-emoji="😂" title="Me divierte">😂</button>
-            <button type="button" class="bubble-emoji-btn" data-emoji="🥹" title="Nostalgia">🥹</button>
-            <button type="button" class="bubble-emoji-btn" data-emoji="🔥" title="Fuego / Épico">🔥</button>
-            <button type="button" class="bubble-emoji-btn" data-emoji="😡" title="Enojo">😡</button>
-            <button type="button" class="bubble-emoji-btn" data-emoji="😳" title="Vergüenza / Shock">😳</button>
-            <button type="button" class="bubble-emoji-btn" data-emoji="🥵" title="Calor">🥵</button>
-            <button type="button" class="bubble-emoji-btn" data-emoji="🥶" title="Frío">🥶</button>
-            <button type="button" class="bubble-emoji-btn" data-emoji="🎓" title="Graduación">🎓</button>
+            <button type="button" class="bubble-emoji-btn" data-emoji="😭" title="Me conmueve / Llorar">😭</button>
+            <button type="button" class="bubble-emoji-btn" data-emoji="🔥" title="Épico / Fuego">🔥</button>
           </div>
           <button 
             type="button" 
@@ -1806,29 +1804,67 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (type === 'video') {
-      if (src && lightboxVideo) {
+      let cleanVideoSrc = src || '';
+      if (cleanVideoSrc.includes('drive.google.com/uc?export=download&id=')) {
+        const m = cleanVideoSrc.match(/id=([a-zA-Z0-9_-]+)/);
+        if (m && m[1]) cleanVideoSrc = `https://drive.usercontent.google.com/download?id=${m[1]}&export=download`;
+      }
+
+      if (cleanVideoSrc && lightboxVideo) {
         lightboxVideo.style.display = 'block';
         if (poster) lightboxVideo.poster = poster;
-        lightboxVideo.src = src;
+        lightboxVideo.src = cleanVideoSrc;
         lightboxVideo.load();
-        lightboxVideo.play().catch(() => {});
+        
+        const playPromise = lightboxVideo.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            lightboxVideo.muted = true;
+            lightboxVideo.play().catch(() => {});
+          });
+        }
 
         // Fallback transparente al iframe de Google Drive si el navegador bloquea la reproducción directa
         lightboxVideo.onerror = () => {
           if (fallbackSrc && lightboxIframe) {
             lightboxVideo.style.display = 'none';
             lightboxIframe.style.display = 'block';
-            lightboxIframe.src = fallbackSrc;
+            lightboxIframe.src = fallbackSrc.includes('?') ? fallbackSrc : `${fallbackSrc}?autoplay=1`;
           }
         };
       } else if (fallbackSrc && lightboxIframe) {
         lightboxIframe.style.display = 'block';
-        lightboxIframe.src = fallbackSrc;
+        lightboxIframe.src = fallbackSrc.includes('?') ? fallbackSrc : `${fallbackSrc}?autoplay=1`;
       }
     } else {
       if (lightboxImg) {
         lightboxImg.style.display = 'block';
         lightboxImg.src = src;
+      }
+    }
+
+    // Botón de pantalla completa para videos
+    const lightboxFsBtn = document.getElementById('btn-lightbox-fullscreen');
+    if (lightboxFsBtn) {
+      if (type === 'video') {
+        lightboxFsBtn.style.display = 'inline-flex';
+        lightboxFsBtn.onclick = () => {
+          if (lightboxVideo && lightboxVideo.style.display !== 'none') {
+            if (lightboxVideo.requestFullscreen) {
+              lightboxVideo.requestFullscreen();
+            } else if (lightboxVideo.webkitEnterFullscreen) {
+              lightboxVideo.webkitEnterFullscreen();
+            } else if (lightboxVideo.webkitRequestFullscreen) {
+              lightboxVideo.webkitRequestFullscreen();
+            }
+          } else if (lightboxIframe && lightboxIframe.style.display !== 'none') {
+            if (lightboxIframe.requestFullscreen) {
+              lightboxIframe.requestFullscreen();
+            }
+          }
+        };
+      } else {
+        lightboxFsBtn.style.display = 'none';
       }
     }
 
@@ -1847,6 +1883,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!lightboxOverlay) return;
     lightboxOverlay.classList.remove('is-open');
     document.body.style.overflow = '';
+    const lightboxFsBtn = document.getElementById('btn-lightbox-fullscreen');
+    if (lightboxFsBtn) lightboxFsBtn.style.display = 'none';
     if (lightboxVideo) {
       lightboxVideo.pause();
       lightboxVideo.removeAttribute('src');
