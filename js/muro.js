@@ -316,11 +316,24 @@ document.addEventListener('DOMContentLoaded', () => {
             // Filtrar posts de prueba remotos
             remotePosts = remotePosts.filter(p => !isTestPost(p));
 
-            // Asegurar que las reacciones del usuario en este navegador se preserven y sumen
+            // Asegurar que fileId y reacciones se normalicen correctamente
             const myIdentifier = userIp || visitorId;
             remotePosts.forEach((rp) => {
+              // Si fileId es el ID interno mem_..., usar el ID de Drive que está en url
+              if (rp.url && (!rp.fileId || String(rp.fileId).startsWith('mem-') || rp.fileId === rp.id)) {
+                rp.fileId = rp.url;
+              }
+
               const localChoice = userReactionsMap[rp.id] || (rp.fileId ? userReactionsMap[rp.fileId] : null) || (likedPostsLocal.includes(rp.id) || (rp.fileId && likedPostsLocal.includes(rp.fileId)) ? '❤️' : null);
-              rp.reactions = rp.reactions || {};
+              
+              if (Array.isArray(rp.reactions)) {
+                const rxObj = {};
+                rp.reactions.forEach(r => { if (r && r.emoji) rxObj[r.emoji] = r.count || 1; });
+                rp.reactions = rxObj;
+              } else if (!rp.reactions || typeof rp.reactions !== 'object') {
+                rp.reactions = {};
+              }
+
               rp.ips_likes = Array.isArray(rp.ips_likes) 
                 ? rp.ips_likes 
                 : (rp.ips_likes ? String(rp.ips_likes).split(',').map(s => s.trim()).filter(Boolean) : []);
@@ -541,12 +554,16 @@ document.addEventListener('DOMContentLoaded', () => {
     )) || likedPostsLocal.includes(post.id);
 
     // 1. Contenido Multimedia estilo Pinterest (Media al frente con bordes superiores adaptados)
+    const resolvedDriveId = (post.fileId && post.fileId !== 'uploaded-local' && !String(post.fileId).startsWith('mem-'))
+      ? post.fileId
+      : (post.url && !String(post.url).startsWith('http') && !String(post.url).startsWith('mem-') ? post.url : null);
+    const hasValidDriveId = Boolean(resolvedDriveId);
+
     let html = `<div class="card-media-wrapper">`;
     if (isVideo) {
-      const hasValidDriveId = post.fileId && post.fileId !== 'uploaded-local' && !String(post.fileId).startsWith('mem-');
-      const videoDirectSrc = post.urlFallback || (hasValidDriveId ? `https://drive.google.com/uc?export=download&id=${post.fileId}` : '');
-      const posterSrc = hasValidDriveId ? `https://lh3.googleusercontent.com/d/${post.fileId}` : '';
-      const drivePreviewSrc = hasValidDriveId ? `https://drive.google.com/file/d/${post.fileId}/preview` : '';
+      const videoDirectSrc = post.urlFallback || (hasValidDriveId ? `https://drive.google.com/uc?export=download&id=${resolvedDriveId}` : '');
+      const posterSrc = hasValidDriveId ? `https://lh3.googleusercontent.com/d/${resolvedDriveId}` : '';
+      const drivePreviewSrc = hasValidDriveId ? `https://drive.google.com/file/d/${resolvedDriveId}/preview` : '';
 
       html += `
         <div class="card-video-container js-lightbox-trigger" 
@@ -576,9 +593,8 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     } else {
       // Imagen
-      const hasValidDriveId = post.fileId && post.fileId !== 'uploaded-local' && !String(post.fileId).startsWith('mem-');
       const imgSrc = hasValidDriveId
-        ? `https://drive.google.com/thumbnail?id=${post.fileId}&sz=w1000`
+        ? `https://drive.google.com/thumbnail?id=${resolvedDriveId}&sz=w1000`
         : (post.urlFallback || '');
 
       html += `
