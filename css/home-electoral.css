@@ -1,0 +1,1601 @@
+/* ==========================================================================
+   GRADUACIÓN FIQ BUAP DICIEMBRE 2027 — ESTILOS PÁGINA PRINCIPAL / RESUMEN ELECTORAL
+   Diseño Editorial UI/UX: Hero Slider Infográfico y Desglose Modular
+   Paleta: Fondo claro (#FAF9F5), Azul Marino (#091E3A, #163B72) y Verde Esmeralda (#0D5C3A, #059669)
+   ========================================================================== */
+
+:root {
+  --electoral-navy: #091E3A;
+  --electoral-navy-light: #163B72;
+  --electoral-navy-tint: rgba(9, 30, 58, 0.06);
+  --electoral-emerald: #0D5C3A;
+  --electoral-emerald-hover: #09472c;
+  --electoral-emerald-light: #059669;
+  --electoral-emerald-tint: rgba(13, 92, 58, 0.08);
+  --electoral-emerald-glow: rgba(13, 92, 58, 0.16);
+  --electoral-gold: #C5A880;
+  --electoral-gold-dark: #A88758;
+  --electoral-gold-tint: rgba(197, 168, 128, 0.15);
+  --electoral-border: #E5E1D8;
+  --electoral-card-bg: #FFFFFF;
+  --electoral-surface: #F6F4ED;
+}
+
+/* --------------------------------------------------------------------------
+   1. HERO SECTION & SLIDER CONTAINER
+   -------------------------------------------------------------------------- */
+.electoral-hero-section {
+  padding-top: calc(var(--navbar-height) + 1.25rem);
+  padding-bottom: clamp(2.5rem, 5vw, 4rem);
+  background: radial-gradient(circle at 50% 0%, rgba(13, 92, 58, 0.04) 0%, rgba(9, 30, 58, 0.03) 40%, rgba(250, 249, 245, 1) 85%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-slider-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1260px;
+  margin: 0 auto;
+}
+
+/* Encabezado editorial superior del Hero */
+.hero-editorial-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.hero-top-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--electoral-navy-tint);
+  border: 1px solid rgba(9, 30, 58, 0.12);
+  color: var(--electoral-navy);
+  padding: 0.35rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+}
+
+.hero-top-badge .badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--electoral-emerald);
+  box-shadow: 0 0 0 3px rgba(13, 92, 58, 0.2);
+  display: inline-block;
+  animation: pulse-dot-anim 2s infinite;
+}
+
+@keyframes pulse-dot-anim {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.hero-main-heading {
+  font-family: var(--font-serif);
+  font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+  font-weight: 700;
+  color: var(--electoral-navy);
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.015em;
+}
+
+.hero-main-heading .heading-accent {
+  color: var(--electoral-emerald);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.hero-lead-text {
+  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+  color: var(--color-text-muted);
+  max-width: 780px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Contenedor del Carrusel */
+.hero-slider-container {
+  position: relative;
+  background: var(--electoral-card-bg);
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 36px rgba(9, 30, 58, 0.07);
+  overflow: hidden;
+  outline: none;
+}
+
+.slider-viewport {
+  position: relative;
+  min-height: 520px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .slider-viewport {
+    min-height: 580px;
+  }
+}
+
+@media (max-width: 480px) {
+  .slider-viewport {
+    min-height: 640px;
+  }
+}
+
+/* Diapositivas individuales (cross-fade ultra suave) */
+.hero-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: clamp(1.5rem, 3.5vw, 2.5rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.985);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.hero-slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+  z-index: 2;
+}
+
+/* Encabezado interior de cada Slide */
+.slide-infographic-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: 0.85rem;
+}
+
+.slide-title-group {
+  flex: 1;
+  min-width: 260px;
+}
+
+.slide-mini-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.4rem;
+}
+
+.badge-navy {
+  background: var(--electoral-navy-tint);
+  color: var(--electoral-navy);
+  border: 1px solid rgba(9, 30, 58, 0.15);
+}
+
+.badge-emerald {
+  background: var(--electoral-emerald-tint);
+  color: var(--electoral-emerald);
+  border: 1px solid rgba(13, 92, 58, 0.18);
+}
+
+.badge-gold {
+  background: var(--electoral-gold-tint);
+  color: #8C6A3C;
+  border: 1px solid rgba(197, 168, 128, 0.3);
+}
+
+.slide-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
+  font-weight: 700;
+  color: var(--electoral-navy);
+  line-height: 1.25;
+  margin-bottom: 0.25rem;
+}
+
+.slide-tagline {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+/* Callout badge grande en Slide */
+.slide-callout-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--electoral-surface);
+  border: 1px solid var(--electoral-border);
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--electoral-navy);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.slide-callout-pill .highlight-num {
+  color: var(--electoral-emerald);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+/* Cuerpo central de los slides */
+.slide-infographic-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0.5rem 0 1rem;
+}
+
+/* Pie del slide */
+.slide-infographic-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 0.85rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  flex-wrap: wrap;
+}
+
+.slide-footer-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--electoral-emerald);
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.slide-footer-cta:hover {
+  color: var(--electoral-navy);
+  transform: translateX(3px);
+}
+
+/* --------------------------------------------------------------------------
+   2. INFOGRAFÍA SLIDE 1: IDENTIDAD Y REPRESENTACIÓN TOTAL FIQ
+   -------------------------------------------------------------------------- */
+.identity-slide-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+.survey-highlight-box {
+  background: linear-gradient(135deg, rgba(13, 92, 58, 0.06) 0%, rgba(9, 30, 58, 0.04) 100%);
+  border: 1px solid rgba(13, 92, 58, 0.16);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.survey-stat-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.stat-circle-num {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--electoral-emerald);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(13, 92, 58, 0.25);
+  flex-shrink: 0;
+}
+
+.survey-stat-text strong {
+  color: var(--electoral-navy);
+  font-size: 0.95rem;
+  display: block;
+}
+
+.survey-stat-text span {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.survey-badge-result {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--electoral-navy);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Grid de los 5 coordinadores por colegio */
+.coordinators-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .coordinators-visual-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .coordinators-visual-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.college-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  padding: 0.95rem;
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.college-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(9, 30, 58, 0.08);
+  border-color: var(--electoral-emerald);
+}
+
+.college-header-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+
+.college-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-full);
+}
+
+.college-tag.tag-iq { background: rgba(9, 30, 58, 0.08); color: var(--electoral-navy); }
+.college-tag.tag-alimentos { background: rgba(180, 83, 9, 0.1); color: #B45309; }
+.college-tag.tag-ambiental { background: rgba(13, 92, 58, 0.1); color: var(--electoral-emerald); }
+.college-tag.tag-materiales { background: rgba(71, 85, 105, 0.1); color: #475569; }
+
+.coordinator-count-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.college-name {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--electoral-navy);
+  margin-bottom: 0.45rem;
+  line-height: 1.25;
+}
+
+.coordinator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--color-border-subtle);
+}
+
+.coord-person {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.coord-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--electoral-surface);
+  color: var(--electoral-navy);
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--electoral-border);
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   3. INFOGRAFÍA SLIDE 2: 6 PILARES DE LA PROPUESTA (GRID COMPARATIVO)
+   -------------------------------------------------------------------------- */
+.pillars-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .pillars-visual-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
+  .pillars-visual-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pillar-item-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  padding: 0.95rem;
+  position: relative;
+  transition: transform var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+.pillar-item-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--electoral-emerald);
+}
+
+.pillar-top-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.45rem;
+}
+
+.pillar-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--electoral-emerald-tint);
+  color: var(--electoral-emerald);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pillar-num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--electoral-gold-dark);
+  letter-spacing: 0.05em;
+}
+
+.pillar-title {
+  font-family: var(--font-serif);
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--electoral-navy);
+  line-height: 1.25;
+}
+
+.pillar-desc {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.pillar-desc strong {
+  color: var(--color-text-main);
+}
+
+/* --------------------------------------------------------------------------
+   4. INFOGRAFÍA SLIDE 3: LOGÍSTICA & REQUISITOS DE VOTACIÓN
+   -------------------------------------------------------------------------- */
+.voting-pass-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.voting-key-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+  background: var(--electoral-surface);
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+}
+
+@media (max-width: 768px) {
+  .voting-key-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+.key-strip-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.key-strip-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--electoral-navy);
+  border: 1px solid var(--electoral-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.key-strip-info strong {
+  display: block;
+  font-size: 0.86rem;
+  color: var(--electoral-navy);
+}
+
+.key-strip-info span {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+/* 3 Columnas por Generación */
+.requirements-3col-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .requirements-3col-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.req-gen-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-top: 3px solid var(--electoral-emerald);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.req-gen-card.card-universal {
+  border-top-color: var(--electoral-navy);
+}
+
+.req-gen-card.card-2023 {
+  border-top-color: var(--electoral-gold-dark);
+}
+
+.gen-card-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--electoral-navy);
+  margin-bottom: 0.2rem;
+}
+
+.gen-card-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--electoral-navy);
+  line-height: 1.25;
+}
+
+.req-list-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.req-list-bullet svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--electoral-emerald);
+}
+
+.req-status-pill {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border-subtle);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   5. INFOGRAFÍA SLIDE 4: CANDADOS DE TRANSPARENCIA Y SEGURIDAD
+   -------------------------------------------------------------------------- */
+.security-flow-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.security-hero-banner {
+  background: linear-gradient(135deg, rgba(9, 30, 58, 0.05) 0%, rgba(13, 92, 58, 0.05) 100%);
+  border: 1px solid rgba(9, 30, 58, 0.12);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.security-rule-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--electoral-navy);
+}
+
+.security-rule-tag svg {
+  color: var(--electoral-emerald);
+}
+
+.security-subtag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+/* Flujo de 3 pasos horizontales con conector */
+.security-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .security-steps-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sec-step-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  position: relative;
+  transition: transform var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+.sec-step-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--electoral-emerald);
+}
+
+.sec-step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--electoral-navy);
+  color: #FFFFFF;
+  font-size: 0.74rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.sec-step-card:nth-child(2) .sec-step-number {
+  background: var(--electoral-emerald);
+}
+
+.sec-step-card:nth-child(3) .sec-step-number {
+  background: var(--electoral-gold-dark);
+}
+
+.sec-step-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--electoral-navy);
+  margin-bottom: 0.35rem;
+  line-height: 1.25;
+}
+
+.sec-step-desc {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.sec-step-desc strong {
+  color: var(--color-text-main);
+}
+
+/* --------------------------------------------------------------------------
+   6. CONTROLES Y NAVEGACIÓN DEL CARRUSEL
+   -------------------------------------------------------------------------- */
+.slider-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--electoral-surface);
+  border-top: 1px solid var(--electoral-border);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.slider-arrows-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.slider-nav-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  color: var(--electoral-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.slider-nav-btn:hover {
+  background: var(--electoral-navy);
+  color: #FFFFFF;
+  border-color: var(--electoral-navy);
+  transform: scale(1.05);
+}
+
+.slider-nav-btn:focus-visible {
+  outline: 2px solid var(--electoral-emerald);
+  outline-offset: 2px;
+}
+
+/* Indicadores tipo Pill / Barra de progreso */
+.slider-indicators {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+  max-width: 680px;
+}
+
+.indicator-pill {
+  position: relative;
+  flex: 1;
+  height: 32px;
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  padding: 0 0.85rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+@media (max-width: 640px) {
+  .indicator-pill {
+    height: 8px;
+    padding: 0;
+    border-radius: 4px;
+  }
+  .indicator-text-label {
+    display: none;
+  }
+}
+
+.indicator-pill:hover {
+  border-color: var(--electoral-emerald);
+}
+
+.indicator-pill.is-active {
+  border-color: var(--electoral-emerald);
+  background: rgba(13, 92, 58, 0.04);
+}
+
+.indicator-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 0%;
+  background: var(--electoral-emerald-tint);
+  transition: width 0.1s linear;
+  pointer-events: none;
+}
+
+.indicator-pill.is-active .indicator-progress-fill {
+  background: rgba(13, 92, 58, 0.12);
+}
+
+.indicator-text-label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.indicator-pill.is-active .indicator-text-label {
+  color: var(--electoral-navy);
+  font-weight: 700;
+}
+
+/* Status y contador */
+.slider-status-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.slide-counter-badge {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--electoral-navy);
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+}
+
+.autoplay-pill-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--color-text-light);
+}
+
+.autoplay-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--electoral-emerald);
+}
+
+/* --------------------------------------------------------------------------
+   7. SECCIONES MODULARES DEL DESGLOSE INFERIOR (4 BLOQUES OFICIALES)
+   -------------------------------------------------------------------------- */
+.electoral-modular-breakdown {
+  padding: clamp(3rem, 6vw, 5rem) 0;
+  background: var(--color-bg-base);
+}
+
+.modular-block-section {
+  margin-bottom: clamp(3rem, 6vw, 4.5rem);
+  scroll-margin-top: calc(var(--navbar-height) + 2rem);
+}
+
+.modular-block-section:last-child {
+  margin-bottom: 0;
+}
+
+.modular-section-header {
+  text-align: center;
+  max-width: 820px;
+  margin: 0 auto clamp(1.75rem, 3.5vw, 2.5rem);
+}
+
+.modular-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0.3rem 0.85rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.5rem;
+}
+
+.modular-heading {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 2.8vw, 2.35rem);
+  font-weight: 700;
+  color: var(--electoral-navy);
+  line-height: 1.25;
+  margin-bottom: 0.5rem;
+}
+
+.modular-lead {
+  font-size: clamp(0.92rem, 1.3vw, 1.05rem);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+/* BLOQUE 1: CONTEXTO Y QUIÉNES SOMOS */
+.context-editorial-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-left: 4px solid var(--electoral-emerald);
+  border-radius: var(--radius-md);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  margin-bottom: 2rem;
+}
+
+.context-editorial-card p {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--color-text-main);
+  margin-bottom: 1rem;
+}
+
+.context-editorial-card p:last-child {
+  margin-bottom: 0;
+}
+
+.context-highlight-quote {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-style: italic;
+  color: var(--electoral-navy);
+  border-left: 3px solid var(--electoral-gold);
+  padding-left: 1rem;
+  margin: 1.25rem 0;
+  font-weight: 500;
+}
+
+/* Coordinadores detalle */
+.detailed-committee-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .detailed-committee-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .detailed-committee-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .detailed-committee-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-member-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+}
+
+.detail-member-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(9, 30, 58, 0.08);
+}
+
+.detail-avatar-circle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--electoral-navy-tint);
+  color: var(--electoral-navy);
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  border: 2px solid var(--electoral-border);
+}
+
+.detail-member-name {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--electoral-navy);
+  margin-bottom: 0.35rem;
+}
+
+.detail-member-career {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.35rem;
+}
+
+.detail-member-role {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+/* BLOQUE 2: 6 PILARES DETALLADOS (GRID) */
+.pillars-detailed-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 900px) {
+  .pillars-detailed-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .pillars-detailed-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pillar-detail-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  transition: transform var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+.pillar-detail-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--electoral-emerald);
+}
+
+.pillar-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.pillar-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--electoral-emerald-tint);
+  color: var(--electoral-emerald);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pillar-card-title-group {
+  flex: 1;
+}
+
+.pillar-badge-num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--electoral-gold-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pillar-card-heading {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--electoral-navy);
+  line-height: 1.25;
+}
+
+.pillar-card-body {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.pillar-card-body strong {
+  color: var(--color-text-main);
+}
+
+.pillar-card-footer {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* BLOQUE 3: ORGANIZACIÓN ELECTORAL & TABLA DE REQUISITOS */
+.electoral-logistics-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 800px) {
+  .electoral-logistics-overview {
+    grid-template-columns: 1fr;
+  }
+}
+
+.logistics-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+.logistics-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--electoral-navy-tint);
+  color: var(--electoral-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logistics-content h4 {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--electoral-navy);
+  margin-bottom: 0.25rem;
+}
+
+.logistics-content p {
+  font-size: 0.84rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Tabla Comparativa de Requisitos Electorales */
+.requirements-table-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  margin-bottom: 2rem;
+}
+
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.electoral-requirements-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.electoral-requirements-table thead {
+  background: var(--electoral-surface);
+  border-bottom: 2px solid var(--electoral-border);
+}
+
+.electoral-requirements-table th {
+  padding: 1rem 1.25rem;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--electoral-navy);
+  letter-spacing: 0.02em;
+}
+
+.electoral-requirements-table td {
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text-main);
+  vertical-align: middle;
+}
+
+.electoral-requirements-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.electoral-requirements-table tbody tr:hover {
+  background-color: rgba(13, 92, 58, 0.02);
+}
+
+.generation-tag {
+  display: inline-block;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+}
+
+.tag-all-gen {
+  background: var(--electoral-navy-tint);
+  color: var(--electoral-navy);
+  border: 1px solid rgba(9, 30, 58, 0.15);
+}
+
+.tag-2021-2022 {
+  background: var(--electoral-emerald-tint);
+  color: var(--electoral-emerald);
+  border: 1px solid rgba(13, 92, 58, 0.18);
+}
+
+.tag-2023 {
+  background: var(--electoral-gold-tint);
+  color: #8C6A3C;
+  border: 1px solid rgba(197, 168, 128, 0.3);
+}
+
+/* BLOQUE 4: CANDADOS DE TRANSPARENCIA (TIMELINE DE 3 ETAPAS) */
+.transparency-timeline-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 860px) {
+  .transparency-timeline-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.timeline-step-card {
+  background: #FFFFFF;
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  position: relative;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  transition: transform var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+.timeline-step-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--electoral-emerald);
+}
+
+.step-badge-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.step-num-pill {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--electoral-navy);
+  color: #FFFFFF;
+  font-size: 0.82rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-step-card:nth-child(2) .step-num-pill {
+  background: var(--electoral-emerald);
+}
+
+.timeline-step-card:nth-child(3) .step-num-pill {
+  background: var(--electoral-gold-dark);
+}
+
+.step-type-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.step-heading {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--electoral-navy);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.step-description {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.step-description strong {
+  color: var(--color-text-main);
+}
+
+/* Banner de cierre y consenso ético */
+.electoral-consensus-banner {
+  background: linear-gradient(135deg, rgba(9, 30, 58, 0.06) 0%, rgba(13, 92, 58, 0.06) 100%);
+  border: 1px solid rgba(13, 92, 58, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  text-align: center;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.consensus-title {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--electoral-navy);
+  margin-bottom: 0.4rem;
+}
+
+.consensus-text {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  max-width: 720px;
+  margin: 0 auto 1.25rem;
+  line-height: 1.6;
+}
+
+/* Fila de Botones de Navegación Rápida a Subpáginas */
+.section-ctas-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.btn-electoral-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--electoral-emerald);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.75rem 1.4rem;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 12px rgba(13, 92, 58, 0.2);
+}
+
+.btn-electoral-primary:hover {
+  background-color: var(--electoral-emerald-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(13, 92, 58, 0.28);
+}
+
+.btn-electoral-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #FFFFFF;
+  color: var(--electoral-navy) !important;
+  border: 1px solid var(--electoral-border);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.75rem 1.4rem;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.btn-electoral-secondary:hover {
+  background-color: var(--electoral-surface);
+  border-color: var(--electoral-navy);
+  transform: translateY(-2px);
+}
+
+.btn-electoral-subtle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: transparent;
+  color: var(--color-text-muted) !important;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.btn-electoral-subtle:hover {
+  color: var(--electoral-navy) !important;
+  background-color: rgba(9, 30, 58, 0.04);
+}
+
+
+/* --------------------------------------------------------------------------
+   8. ILUSTRACIONES, DIBUJOS Y EMBLEMAS INSTITUCIONALES (ESTILO EDITORIAL)
+   -------------------------------------------------------------------------- */
+.institutional-logos-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.inst-logo-item {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(9, 30, 58, 0.08));
+  transition: transform var(--transition-fast);
+}
+
+.inst-logo-item:hover {
+  transform: scale(1.05);
+}
+
+.slide-drawing-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.drawing-svg-box {
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(13, 92, 58, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
+  border-radius: 50%;
+  padding: 8px;
+}
+
+@media (max-width: 640px) {
+  .drawing-svg-box {
+    width: 70px;
+    height: 70px;
+  }
+}
+
+.drawing-vector-illustration {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 10px rgba(9, 30, 58, 0.1));
+  transition: transform var(--transition-smooth);
+}
+
+.drawing-vector-illustration:hover {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.header-with-drawing {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.illustrated-badge-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(246, 244, 237, 0.9) 100%);
+  border: 1px solid var(--electoral-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.5rem;
+  box-shadow: 0 4px 18px rgba(9, 30, 58, 0.04);
+  margin-bottom: 1.5rem;
+}
+
+.illustrated-badge-text h3 {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--electoral-navy);
+  margin-bottom: 0.2rem;
+}
+
+.illustrated-badge-text p {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.drawing-icon-pill {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--electoral-surface);
+  border: 1px solid var(--electoral-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}

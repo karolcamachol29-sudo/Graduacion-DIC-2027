@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuestra Propuesta de Graduación | Comité A · FIQ Diciembre 2027</title>
+  
+  <!-- Tipografía Google Fonts Oficial del Sitio Web -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       VARIABLES Y SISTEMA DE DISEÑO EDITORIAL (ESTILO ZOLA FIQ 2027)
+       ========================================================================== */
+    :root {
+      --color-bg-base: #FAF9F5;
+      --color-bg-card: #FFFFFF;
+      --color-bg-surface-alt: #F4F1EA;
+      --color-bg-subtle: #EFECE6;
+      
+      --color-sage: #5B6B54;
+      --color-sage-hover: #485542;
+      --color-sage-light: #778870;
+      --color-sage-tint: rgba(91, 107, 84, 0.08);
+      
+      --color-gold: #C5A880;
+      --color-gold-hover: #B3946B;
+      --color-gold-tint: rgba(197, 168, 128, 0.14);
+
+      --color-text-main: #2B2B29;
+      --color-text-muted: #71716E;
+      --color-text-light: #9B9B97;
+      
+      --color-border: #E8E5DF;
+      --color-border-subtle: #F0EDE8;
+      
+      --font-serif: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+      --font-serif-display: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      
+      --shadow-card: 0 10px 30px rgba(43, 43, 41, 0.06);
+      --shadow-float: 0 20px 45px rgba(43, 43, 41, 0.12);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: #1A1A19;
+      font-family: var(--font-sans);
+      color: var(--color-text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+    }
+
+    /* ==========================================================================
+       PROGRESS BAR Y TOP BAR
+       ========================================================================== */
+    .deck-topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 52px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+      background: rgba(26, 26, 25, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .progress-bar-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 12.5%;
+      background: linear-gradient(90deg, var(--color-gold), var(--color-sage-light));
+      transition: width 0.4s ease;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      width: 28px;
+      height: 28px;
+      background: var(--color-gold);
+      color: #FFFFFF;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-title {
+      color: #FAF9F5;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .brand-title span {
+      color: var(--color-gold);
+      font-weight: 400;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .slide-counter {
+      color: #A3A39E;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .slide-counter strong {
+      color: #FAF9F5;
+    }
+
+    .top-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #FAF9F5;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .top-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* ==========================================================================
+       VIEWPORT Y CONTENEDOR 16:9
+       ========================================================================== */
+    .deck-viewport {
+      width: 100%;
+      height: 100vh;
+      padding: 68px 24px 68px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-stage {
+      width: 100%;
+      max-width: 1140px;
+      height: 100%;
+      max-height: 640px;
+      background: var(--color-bg-base);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    /* ==========================================================================
+       ESTRUCTURA DE CADA DIAPOSITIVA (SLIDE)
+       ========================================================================== */
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.98) translateY(12px);
+      transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 44px 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .slide.is-active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1) translateY(0);
+      z-index: 2;
+    }
+
+    /* Headers de Diapositiva */
+    .slide-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--color-sage);
+      margin-bottom: 6px;
+    }
+
+    .slide-eyebrow-gold {
+      color: var(--color-gold-hover);
+    }
+
+    .slide-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .slide-title {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.18;
+      color: var(--color-text-main);
+      letter-spacing: -0.015em;
+    }
+
+    .slide-title em {
+      font-style: italic;
+      color: var(--color-sage);
+    }
+
+    .slide-subtitle {
+      font-size: 13.5px;
+      color: var(--color-text-muted);
+      line-height: 1.45;
+      margin-top: 4px;
+      max-width: 680px;
+    }
+
+    /* Contenido dinámico */
+    .slide-body {
+      flex: 1;
+      margin: 18px 0;
+      display: flex;
+      gap: 24px;
+      align-items: stretch;
+      min-height: 0;
+    }
+
+    /* Footer sutil de diapositiva */
+    .slide-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--color-border);
+      padding-top: 12px;
+      font-size: 11.5px;
+      color: var(--color-text-light);
+    }
+
+    .footer-tags {
+      display: flex;
+      gap: 16px;
+    }
+
+    .footer-tag {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ==========================================================================
+       COMPONENTES EDITORIALES: TARJETAS, GRIDS Y BADGES
+       ========================================================================== */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      width: 100%;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 22px;
+      width: 100%;
+    }
+
+    .grid-split-img {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .feature-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: transparent;
+      transition: var(--transition);
+    }
+
+    .feature-card:hover::before {
+      background: var(--color-sage);
+    }
+
+    .feature-num {
+      font-family: var(--font-serif);
+      font-size: 26px;
+      font-style: italic;
+      color: var(--color-gold);
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .feature-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-bottom: 6px;
+    }
+
+    .feature-desc {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--color-text-muted);
+    }
+
+    .feature-highlight {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--color-border);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--color-sage);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Badges */
+    .pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .pill-sage {
+      background: var(--color-sage-tint);
+      color: var(--color-sage);
+      border: 1px solid rgba(91, 107, 84, 0.2);
+    }
+
+    .pill-gold {
+      background: var(--color-gold-tint);
+      color: var(--color-gold-hover);
+      border: 1px solid rgba(197, 168, 128, 0.3);
+    }
+
+    /* Imagen con marco editorial */
+    .editorial-media-box {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: relative;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-surface-alt);
+    }
+
+    .editorial-media-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .media-caption-badge {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(250, 249, 245, 0.94);
+      backdrop-filter: blur(8px);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(232, 229, 223, 0.8);
+      font-size: 11px;
+      color: var(--color-text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Tabla comparativa estilizada */
+    .slide-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--color-border);
+      font-size: 12px;
+      background: #FFFFFF;
+      box-shadow: var(--shadow-card);
+    }
+
+    .slide-table th {
+      padding: 10px 14px;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .slide-table th.th-crit {
+      background: #2B2B29;
+      color: #D6D6D1;
+      width: 25%;
+      letter-spacing: 0.05em;
+    }
+
+    .slide-table th.th-a {
+      background: var(--color-sage);
+      color: #FFFFFF;
+      width: 40%;
+    }
+
+    .slide-table th.th-b {
+      background: #4A5568;
+      color: #E2E8F0;
+      width: 35%;
+    }
+
+    .slide-table td {
+      padding: 9px 14px;
+      border-top: 1px solid var(--color-border-subtle);
+      line-height: 1.4;
+      vertical-align: top;
+    }
+
+    .slide-table tr:nth-child(even) td {
+      background: #FAF9F5;
+    }
+
+    .slide-table td.td-crit {
+      font-weight: 700;
+      color: var(--color-text-main);
+      border-right: 1px solid var(--color-border-subtle);
+      background: #F4F1EA !important;
+    }
+
+    .slide-table td.td-a {
+      border-right: 1px solid var(--color-border-subtle);
+      color: var(--color-text-main);
+    }
+
+    /* ==========================================================================
+       BARRA INFERIOR DE NAVEGACIÓN Y CONTROLES
+       ========================================================================== */
+    .deck-bottombar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 58px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+      background: rgba(26, 26, 25, 0.85);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-hints {
+      color: #7A7A75;
+      font-size: 11.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .key-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      color: #D6D6D1;
+      font-size: 10px;
+      font-family: monospace;
+    }
+
+    .nav-dots {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot-btn {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      padding: 0;
+    }
+
+    .dot-btn:hover {
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .dot-btn.is-active {
+      background: var(--color-gold);
+      transform: scale(1.35);
+    }
+
+    .nav-arrow-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #FAF9F5;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: var(--color-sage);
+      border-color: var(--color-sage);
+      transform: translateY(-1px);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* Animaciones suaves */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+      animation: fadeIn 0.4s ease forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======================================================================
+       TOPBAR CON PROGRESO Y CONTADORES
+       ====================================================================== -->
+  <header class="deck-topbar">
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" id="progress-bar"></div>
+    </div>
+
+    <div class="brand-group">
+      <div class="brand-badge">F</div>
+      <div class="brand-title">FIQ 2027 <span>| Comité A · Organización por Colegio</span></div>
+    </div>
+
+    <div class="top-controls">
+      <div class="slide-counter">
+        <span id="current-slide-num">01</span> / <span id="total-slides-num">08</span>
+      </div>
+      <button class="top-btn" id="btn-fullscreen" title="Pantalla Completa (F)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        <span>Pantalla Completa</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================================================================
+       ESCENARIO 16:9 DE DIAPOSITIVAS
+       ====================================================================== -->
+  <main class="deck-viewport">
+    <div class="slide-stage" id="slide-stage">
+
+      <!-- ==========================================
+           SLIDE 1: PORTADA EDITORIAL
+           ========================================== -->
+      <section class="slide is-active" data-index="1">
+        <div>
+          <span class="slide-eyebrow slide-eyebrow-gold">Portal Oficial · Generación 2021–2023</span>
+          <h1 class="slide-title" style="font-size: 38px; margin-top: 8px;">
+            Nuestra Propuesta de <em>Graduación</em>
+          </h1>
+          <p class="slide-subtitle">
+            Facultad de Ingeniería Química — BUAP | Diciembre 2027<br>
+            <strong>Libertad de elección, contratos individuales directos y respaldo formal.</strong>
+          </p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-split-img">
+            <div style="display: flex; flex-direction: column; justify-content: space-around;">
+              <div style="background: var(--color-bg-card); padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-card);">
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">
+                  <span class="pill pill-gold">Plural y Representativa</span>
+                  <span style="font-size: 12px; color: var(--color-text-muted);">Todas las carreras</span>
+                </div>
+                <p style="font-size: 13px; color: var(--color-text-main); line-height: 1.5;">
+                  Coordinada por representantes de <strong>Ing. Química, Alimentos, Ambiental y Materiales</strong>. Diseñada para que cada estudiante arme su experiencia sin cuotas forzosas.
+                </p>
+              </div>
+
+              <div class="grid-2" style="gap: 14px;">
+                <div style="background: var(--color-bg-card); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                  <strong style="color: var(--color-sage); font-size: 13px;">Cero Efectivo</strong>
+                  <p style="font-size: 11.5px; color: var(--color-text-muted); margin-top: 3px;">Contratos individuales transparentes directo con la empresa proveedora.</p>
+                </div>
+                <div style="background: var(--color-bg-card); padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                  <strong style="color: var(--color-gold-hover); font-size: 13px;">Beca Solidaria</strong>
+                  <p style="font-size: 11.5px; color: var(--color-text-muted); margin-top: 3px;">Apoyo financiero gestionado para que nadie se quede fuera del festejo.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="editorial-media-box">
+              <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800&auto=format&fit=crop" alt="Graduación Universitaria Ceremonia">
+              <div class="media-caption-badge">
+                <span><strong>Generación FIQ 2027</strong> · Memoria y Orgullo</span>
+                <span class="pill pill-sage">Comité A</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slide-footer">
+          <div class="footer-tags">
+            <span class="footer-tag">🏛️ Facultad de Ingeniería Química</span>
+            <span class="footer-tag">🎓 Diciembre 2027</span>
+          </div>
+          <div>Usa <strong>[→]</strong> o <strong>[Espacio]</strong> para avanzar</div>
+        </footer>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 2: LOS 4 PILARES RECTORES
+           ========================================== -->
+      <section class="slide" data-index="2">
+        <div>
+          <span class="slide-eyebrow">Gobernanza y Transparencia</span>
+          <h2 class="slide-title">Los 4 Pilares de <em>Nuestra Propuesta</em></h2>
+          <p class="slide-subtitle">Una organización diseñada con rigor legal, respeto a la economía familiar y autonomía absoluta.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2" style="grid-template-columns: repeat(2, 1fr); gap: 16px;">
+            <div class="feature-card">
+              <div>
+                <div class="feature-num">01</div>
+                <h3 class="feature-title">Contratos Individuales Directos</h3>
+                <p class="feature-desc">Cada alumno firma y paga directamente a la empresa proveedora auditada. <strong>Ningún estudiante ni coordinador administra dinero en efectivo</strong>, eliminando desvíos o sospechas.</p>
+              </div>
+              <div class="feature-highlight">
+                <span>🛡️ Protección jurídica y recibos formales</span>
+              </div>
+            </div>
+
+            <div class="feature-card">
+              <div>
+                <div class="feature-num">02</div>
+                <h3 class="feature-title">Contratación 100% Modular</h3>
+                <p class="feature-desc">Libertad total para elegir lo que deseas celebrar. Quien solo desee foto o protocolo no está obligado a pagar fiesta ni paquetes no deseados.</p>
+              </div>
+              <div class="feature-highlight">
+                <span>✨ Cero paquetes forzosos o ataduras</span>
+              </div>
+            </div>
+
+            <div class="feature-card">
+              <div>
+                <div class="feature-num">03</div>
+                <h3 class="feature-title">Representación Plural por Colegio</h3>
+                <p class="feature-desc">5 coordinadores electos con vocería directa para cada colegio: Ing. Química (2), Alimentos (1), Ambiental (1) y Materiales (1). Todas las decisiones se consultan en encuestas.</p>
+              </div>
+              <div class="feature-highlight">
+                <span>👥 Enfoque universitario integral</span>
+              </div>
+            </div>
+
+            <div class="feature-card">
+              <div>
+                <div class="feature-num">04</div>
+                <h3 class="feature-title">Inclusión y Beca Solidaria</h3>
+                <p class="feature-desc">Mecanismo formal negociado con el proveedor para becar y subsidiar a compañeros en situación económica vulnerable que acrediten cumplimiento académico.</p>
+              </div>
+              <div class="feature-highlight">
+                <span>🤝 Solidaridad generacional real</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slide-footer">
+          <span>Comité A · Propuesta Oficial Documentada en Web</span>
+          <span>Diapositiva 02 de 08</span>
+        </footer>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 3: PROTOCOLO SOLEMNE Y FECHAS
+           ========================================== -->
+      <section class="slide" data-index="3">
+        <div>
+          <span class="slide-eyebrow slide-eyebrow-gold">Acto Académico Oficial</span>
+          <h2 class="slide-title">Protocolo Solemne y <em>Fechas Disponibles</em></h2>
+          <p class="slide-subtitle">La culminación formal de años de esfuerzo académico en un marco digno e institucional.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-split-img">
+            <div style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 18px;">
+                <h4 style="font-size: 14px; font-weight: 700; color: var(--color-text-main); margin-bottom: 8px;">Fechas Verificadas con Disponibilidad en Agenda:</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; background: var(--color-bg-base); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                    <strong style="color: var(--color-sage);">Opción 1:</strong>
+                    <span style="font-weight: 700; color: var(--color-text-main);">Sábado 27 de Noviembre de 2027</span>
+                    <span class="pill pill-sage">Disponible</span>
+                  </div>
+                  <div style="display: flex; align-items: center; justify-content: space-between; background: var(--color-bg-base); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                    <strong style="color: var(--color-sage);">Opción 2:</strong>
+                    <span style="font-weight: 700; color: var(--color-text-main);">Viernes 03 de Diciembre de 2027</span>
+                    <span class="pill pill-gold">Prioritaria</span>
+                  </div>
+                  <div style="display: flex; align-items: center; justify-content: space-between; background: var(--color-bg-base); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                    <strong style="color: var(--color-sage);">Opción 3:</strong>
+                    <span style="font-weight: 700; color: var(--color-text-main);">Viernes 10 de Diciembre de 2027</span>
+                    <span class="pill pill-sage">Disponible</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 14px 18px;">
+                <h4 style="font-size: 13px; font-weight: 700; color: var(--color-sage); margin-bottom: 4px;">Servicios Incluidos en Protocolo:</h4>
+                <p style="font-size: 12px; color: var(--color-text-muted); line-height: 1.45;">
+                  Toga de gala y estola con heráldica oficial, birrete conmemorativo, porta-diplomas de lujo, audio/video profesional, y <strong>acceso libre para familiares sin cobros abusivos</strong> por boleto extra.
+                </p>
+              </div>
+            </div>
+
+            <div class="editorial-media-box">
+              <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800&auto=format&fit=crop" alt="Auditorio Ceremonia Académica">
+              <div class="media-caption-badge">
+                <span><strong>Auditorio Solemne</strong> · Protocolo Académico</span>
+                <span class="pill pill-gold">Toga y Birrete</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slide-footer">
+          <span>Fechas sujetas a votación de la asamblea estudiantil</span>
+          <span>Diapositiva 03 de 08</span>
+        </footer>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 4: PAQUETES DE FOTO Y RECUERDOS (RECORTES WEB)
+           ========================================== -->
+      <section class="slide" data-index="4">
+        <div>
+          <span class="slide-eyebrow">Auditoría Técnica de Proveedores</span>
+          <h2 class="slide-title">Fotografía Oficial y <em>Recortes de Catálogo</em></h2>
+          <p class="slide-subtitle">Cotizaciones reales, modelos auditados y comparativa de mercado (Expo Tours, Casa Azul, Castelán, Bravo).</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-split-img">
+            <div style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <h4 style="font-size: 14px; font-weight: 700;">Paquetes Auditados para FIQ:</h4>
+                  <span class="pill pill-sage">Desde $950 MXN</span>
+                </div>
+                <ul style="padding-left: 18px; font-size: 12px; color: var(--color-text-muted); line-height: 1.55;">
+                  <li><strong>Foto Panorámica:</strong> Marco de madera fina con texturizado anti-reflejo y escudo grabado.</li>
+                  <li><strong>Foto de Generación:</strong> Toga institucional en préstamo sin costo para la toma oficial.</li>
+                  <li><strong>Sesiones de Estudio:</strong> Fotos con familiares, amigos y fotografías individuales para CV.</li>
+                  <li><strong>Financiamiento:</strong> Hasta 10 mensualidades congeladas directamente con el proveedor.</li>
+                </ul>
+              </div>
+
+              <div class="grid-2" style="gap: 12px;">
+                <div style="background: var(--color-bg-surface-alt); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                  <span style="font-size: 11px; font-weight: 700; color: var(--color-gold-hover);">CATÁLOGO VERIFICADO</span>
+                  <div style="font-size: 13px; font-weight: 700; margin-top: 2px;">Casa Azul & Expo Tours</div>
+                  <p style="font-size: 11px; color: var(--color-text-muted);">Formatos Clásico, Platino y Diamante.</p>
+                </div>
+                <div style="background: var(--color-bg-surface-alt); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                  <span style="font-size: 11px; font-weight: 700; color: var(--color-sage);">RESPALDO LEGAL</span>
+                  <div style="font-size: 13px; font-weight: 700; margin-top: 2px;">Garantía de Entrega</div>
+                  <p style="font-size: 11px; color: var(--color-text-muted);">Cláusula de reposición por daño o falla.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recorte del Catálogo Web -->
+            <div class="editorial-media-box" style="background: #FFFFFF;">
+              <img src="assets/catalogo-casa-azul-precios.png" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1532649538693-f3a2ec1bf8bd?q=80&w=800&auto=format&fit=crop';" alt="Recorte de Catálogo y Precios">
+              <div class="media-caption-badge">
+                <span><strong>Recorte de Catálogo</strong> · Precios Oficiales</span>
+                <span class="pill pill-sage">Cotización Verificada</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slide-footer">
+          <span>Consulta el desglose fotográfico completo en el portal web (paquetes.html)</span>
+          <span>Diapositiva 04 de 08</span>
+        </footer>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 5: FIESTA DE GALA Y CENA FAMILIAR
+           ========================================== -->
+      <section class="slide" data-index="5">
+        <div>
+          <span class="slide-eyebrow slide-eyebrow-gold">Celebración de Gala</span>
+          <h2 class="slide-title">Fiesta de Graduación y <em>Cena Familiar</em></h2>
+          <p class="slide-subtitle">Una velada de etiqueta con salones de prestigio en Puebla, alta gastronomía y ambiente seguro.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-split-img">
+            <div style="display: flex; flex-direction: column; justify-content: space-around;">
+              <div class="feature-card" style="padding: 16px 18px;">
+                <h4 style="font-size: 14px; font-weight: 700; color: var(--color-text-main); margin-bottom: 6px;">Banquete y Experiencia Gastronómica:</h4>
+                <p style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.48;">
+                  Menú formal a 3 o 4 tiempos con degustación previa, refresco y hielo ilimitado por 6–8 horas, descorche libre sin cobro por botella y servicio de meseros certificados.
+                </p>
+              </div>
+
+              <div class="feature-card" style="padding: 16px 18px;">
+                <h4 style="font-size: 14px; font-weight: 700; color: var(--color-sage); margin-bottom: 6px;">Producción Audiovisual y Seguridad:</h4>
+                <p style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.48;">
+                  Audio profesional de concierto, iluminación robótica arquitectónica, DJ profesional, grupo versátil en vivo, pista iluminada y cuerpo de seguridad privada en accesos.
+                </p>
+              </div>
+
+              <div style="background: var(--color-gold-tint); border: 1px solid rgba(197, 168, 128, 0.3); padding: 10px 14px; border-radius: var(--radius-sm); font-size: 11.5px; color: var(--color-text-main);">
+                <strong>⭐ Principio de Libertad:</strong> La fiesta es opcional. Quienes prefieran cena íntima pueden contratar solo foto y misa sin penalización.
+              </div>
+            </div>
+
+            <div class="editorial-media-box">
+              <img src="https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop" alt="Salón de Gala y Fiesta">
+              <div class="media-caption-badge">
+                <span><strong>Salón de Gala</strong> · Puebla, Pue.</span>
+                <span class="pill pill-gold">Descorche Libre</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slide-footer">
+          <span>Opciones de salones auditados: Jardines y recintos cerrados de alta gama</span>
+          <span>Diapositiva 05 de 08</span>
+        </footer>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 6: COMUNIDAD Y MURO DE RECUERDOS
+           ========================================== -->
+      <section class="slide" data-index="6">
+        <div>
+          <span class="slide-eyebrow">Experiencia Integral de Generación</span>
+          <h2 class="slide-title">Pre-Fiesta, Misa y <em>Muro de Recuerdos</em></h2>
+          <p class="slide-subtitle">Momentos que fortalecen la identidad y hermandad de nuestra generación universitaria.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="feature-card">
+              <div style="font-size: 28px; margin-bottom: 8px;">🎉</div>
+              <h3 class="feature-title">Pre-Fiesta Universitaria</h3>
+              <p class="feature-desc">Convivencia relajada entre compañeros de todas las carreras de la FIQ para celebrar la entrega de proyectos finales y el cierre de semestre.</p>
+              <div class="feature-highlight">Ambiente estudiantil seguro</div>
+            </div>
+
+            <div class="feature-card">
+              <div style="font-size: 28px; margin-bottom: 8px;">⛪</div>
+              <h3 class="feature-title">Misa de Acción de Gracias</h3>
+              <p class="feature-desc">Celebración eucarística solemne en templo céntrico o capilla universitaria para agradecer a las familias el apoyo brindado en la carrera.</p>
+              <div class="feature-highlight">Entrada abierta a familias</div>
+            </div>
+
+            <div class="feature-card">
+              <div style="font-size: 28px; margin-bottom: 8px;">📸</div>
+              <h3 class="feature-title">Muro de Recuerdos Web</h3>
+              <p class="feature-desc">Espacio digital interactivo dentro de nuestro portal para subir fotos de laboratorios, prácticas de campo, viajes y anécdotas generacionales.</p>
+              <div class="feature-highlight">Ya activo en la plataforma web</div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slide-footer">
+          <span>Plataforma web disponible 24/7 para toda la comunidad FIQ</span>
+          <span>Diapositiva 06 de 08</span>
+        </footer>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 7: TABLA COMPARATIVA AUDITADA
+           ========================================== -->
+      <section class="slide" data-index="7">
+        <div>
+          <span class="slide-eyebrow slide-eyebrow-gold">Transparencia Electoral</span>
+          <h2 class="slide-title">Comparativa: <em>Comité A vs Comité B</em></h2>
+          <p class="slide-subtitle">Diferencias clave para tomar una decisión libre, fundamentada e informada.</p>
+        </div>
+
+        <div class="slide-body" style="align-items: center;">
+          <table class="slide-table">
+            <thead>
+              <tr>
+                <th class="th-crit">Criterio</th>
+                <th class="th-a">Comité A (Organización por Colegio)</th>
+                <th class="th-b">Comité B (Por Secciones)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-crit">Representación</td>
+                <td class="td-a"><strong>5 coordinadores por carrera</strong> (IQ, Alimentos, Ambiental, Materiales).</td>
+                <td class="td-b">11 jefes/representantes de sección.</td>
+              </tr>
+              <tr>
+                <td class="td-crit">Proveedores</td>
+                <td class="td-a"><strong>Empresas auditadas</strong> con catálogos, muestras físicas y precios públicos.</td>
+                <td class="td-b"><em>Por definir</em> (sin contratos ni cotizaciones formales).</td>
+              </tr>
+              <tr>
+                <td class="td-crit">Manejo de Dinero</td>
+                <td class="td-a"><strong>Contratos individuales directos</strong> con la empresa. Cero efectivo entre alumnos.</td>
+                <td class="td-b">Cobros recaudados a través de jefes de sección.</td>
+              </tr>
+              <tr>
+                <td class="td-crit">Modalidad</td>
+                <td class="td-a"><strong>100% Modular:</strong> Eliges solo lo que deseas (foto, fiesta, misa o todo).</td>
+                <td class="td-b">Esquema cerrado por sección.</td>
+              </tr>
+              <tr>
+                <td class="td-crit">Plataforma Web</td>
+                <td class="td-a"><strong>Portal web propio</strong>, comparativas y Muro de Recuerdos interactivo.</td>
+                <td class="td-b">Sin plataforma digital oficial.</td>
+              </tr>
+              <tr>
+                <td class="td-crit">Beca Solidaria</td>
+                <td class="td-a"><strong>Beca gestionada</strong> para compañeros en situación vulnerable.</td>
+                <td class="td-b">No contemplada en su propuesta.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="slide-footer">
+          <span>Consulta la tabla completa de 10 criterios en el sitio web (comparativa.html)</span>
+          <span>Diapositiva 07 de 08</span>
+        </footer>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 8: CONCLUSIÓN Y LLAMADO A VOTAR
+           ========================================== -->
+      <section class="slide" data-index="8">
+        <div>
+          <span class="slide-eyebrow">Decisión Generacional</span>
+          <h2 class="slide-title">Por una Graduación <em>Libre, Digna y Confiable</em></h2>
+          <p class="slide-subtitle">Vota informado y sé parte activa de la organización que merecemos.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-split-img">
+            <div style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 22px; box-shadow: var(--shadow-card);">
+                <h3 style="font-family: var(--font-serif); font-size: 20px; color: var(--color-text-main); margin-bottom: 8px;">
+                  Nuestra Garantía para ti:
+                </h3>
+                <p style="font-size: 13px; color: var(--color-text-muted); line-height: 1.55; margin-bottom: 14px;">
+                  Respaldamos tu esfuerzo de 5 años con una organización profesional, cuentas claras y el respeto a tus decisiones personales y familiares.
+                </p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <span class="pill pill-sage">✓ Sin cuotas ocultas</span>
+                  <span class="pill pill-sage">✓ Facturación directa</span>
+                  <span class="pill pill-gold">✓ Muro digital activo</span>
+                </div>
+              </div>
+
+              <div style="background: var(--color-bg-surface-alt); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 16px 20px;">
+                <div style="font-size: 12px; font-weight: 700; color: var(--color-sage); margin-bottom: 4px;">PARTICIPA EN LA ENCUESTA GENERACIONAL:</div>
+                <p style="font-size: 12px; color: var(--color-text-muted); line-height: 1.45;">
+                  Ingresa con tu credencial BUAP y conoce los detalles de ambos comités para decidir con certeza.
+                </p>
+              </div>
+            </div>
+
+            <div class="editorial-media-box" style="position: relative;">
+              <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=800&auto=format&fit=crop" alt="Compañeros de Carrera Celebrando">
+              <!-- QR Flotante para unirse a la comunidad -->
+              <div style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.96); padding: 8px 10px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.22); display: flex; flex-direction: column; align-items: center; gap: 4px; border: 1px solid var(--color-border);">
+                <img src="assets/qr-whatsapp-comunidad.jpg" onerror="this.style.display='none';" alt="QR Comunidad WhatsApp" style="width: 72px; height: 72px; object-fit: contain; border-radius: 6px;">
+                <span style="font-size: 9.5px; font-weight: 700; color: var(--color-sage); letter-spacing: 0.04em;">UNIRSE AL GRUPO</span>
+              </div>
+              <div class="media-caption-badge">
+                <span><strong>Generación FIQ 2027</strong> · Juntos al Fin</span>
+                <span class="pill pill-gold">Vota Comité A</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slide-footer">
+          <div class="footer-tags">
+            <span class="footer-tag">🌐 Portal Oficial: FIQ Graduación 2027</span>
+            <span class="footer-tag">📩 Contacto: Comités de Colegio</span>
+          </div>
+          <div><strong>¡Gracias por tu atención!</strong></div>
+        </footer>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       BOTTOM BAR: NAVEGACIÓN Y CONTROLES TOUCH/KEYBOARD
+       ====================================================================== -->
+  <footer class="deck-bottombar">
+    <div class="nav-hints">
+      <span>Navegación:</span>
+      <span><span class="key-badge">←</span> <span class="key-badge">→</span> Diapositivas</span>
+      <span><span class="key-badge">Espacio</span> Avanzar</span>
+      <span><span class="key-badge">F</span> Pantalla Completa</span>
+    </div>
+
+    <!-- Indicador de Puntos (Dots) -->
+    <div class="nav-dots" id="nav-dots">
+      <!-- Generado dinámicamente -->
+    </div>
+
+    <!-- Botones de Flecha -->
+    <div class="nav-arrow-group">
+      <button class="nav-btn" id="btn-prev" aria-label="Diapositiva Anterior" title="Anterior (←)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <button class="nav-btn" id="btn-next" aria-label="Siguiente Diapositiva" title="Siguiente (→ o Espacio)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+  </footer>
+
+  <!-- ======================================================================
+       MOTOR INTERACTIVO JAVASCRIPT (SWIPE, TECLADO, FULLSCREEN)
+       ====================================================================== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const slides = document.querySelectorAll('.slide');
+      const totalSlides = slides.length;
+      let currentIndex = 0;
+
+      const currentNumEl = document.getElementById('current-slide-num');
+      const totalNumEl = document.getElementById('total-slides-num');
+      const progressBar = document.getElementById('progress-bar');
+      const btnPrev = document.getElementById('btn-prev');
+      const btnNext = document.getElementById('btn-next');
+      const navDotsContainer = document.getElementById('nav-dots');
+      const btnFullscreen = document.getElementById('btn-fullscreen');
+
+      // Configurar totales
+      totalNumEl.textContent = String(totalSlides).padStart(2, '0');
+
+      // Crear dots de navegación
+      slides.forEach((_, idx) => {
+        const dot = document.createElement('button');
+        dot.classList.add('dot-btn');
+        if (idx === 0) dot.classList.add('is-active');
+        dot.setAttribute('aria-label', `Ir a diapositiva ${idx + 1}`);
+        dot.addEventListener('click', () => goToSlide(idx));
+        navDotsContainer.appendChild(dot);
+      });
+
+      const dots = navDotsContainer.querySelectorAll('.dot-btn');
+
+      function updateSlideUI() {
+        slides.forEach((slide, idx) => {
+          if (idx === currentIndex) {
+            slide.classList.add('is-active');
+          } else {
+            slide.classList.remove('is-active');
+          }
+        });
+
+        // Actualizar números y barra
+        currentNumEl.textContent = String(currentIndex + 1).padStart(2, '0');
+        const progressPercent = ((currentIndex + 1) / totalSlides) * 100;
+        progressBar.style.width = `${progressPercent}%`;
+
+        // Actualizar dots
+        dots.forEach((dot, idx) => {
+          dot.classList.toggle('is-active', idx === currentIndex);
+        });
+
+        // Estado de botones
+        btnPrev.disabled = currentIndex === 0;
+        btnNext.disabled = currentIndex === totalSlides - 1;
+      }
+
+      function goToSlide(index) {
+        if (index >= 0 && index < totalSlides) {
+          currentIndex = index;
+          updateSlideUI();
+        }
+      }
+
+      function nextSlide() {
+        if (currentIndex < totalSlides - 1) {
+          currentIndex++;
+          updateSlideUI();
+        }
+      }
+
+      function prevSlide() {
+        if (currentIndex > 0) {
+          currentIndex--;
+          updateSlideUI();
+        }
+      }
+
+      // Botones
+      btnNext.addEventListener('click', nextSlide);
+      btnPrev.addEventListener('click', prevSlide);
+
+      // Teclado
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+          e.preventDefault();
+          nextSlide();
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace') {
+          e.preventDefault();
+          prevSlide();
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          goToSlide(0);
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          goToSlide(totalSlides - 1);
+        } else if (e.key === 'f' || e.key === 'F') {
+          toggleFullscreen();
+        }
+      });
+
+      // Pantalla Completa
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => console.log(err));
+        } else {
+          document.exitFullscreen().catch(err => console.log(err));
+        }
+      }
+
+      btnFullscreen.addEventListener('click', toggleFullscreen);
+
+      // Soporte Swipe Táctil (Móvil / Tablet)
+      let touchStartX = 0;
+      let touchEndX = 0;
+      const stage = document.getElementById('slide-stage');
+
+      stage.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+
+      stage.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+      }, { passive: true });
+
+      function handleSwipe() {
+        const threshold = 45;
+        if (touchEndX < touchStartX - threshold) {
+          nextSlide();
+        } else if (touchEndX > touchStartX + threshold) {
+          prevSlide();
+        }
+      }
+
+      // Inicializar estado
+      updateSlideUI();
+    });
+  </script>
+</body>
+</html>
