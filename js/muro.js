@@ -54,8 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentCategory = 'all';
   let currentType = 'all';
   let userIp = null;
+  let userFingerprint = null;
   let visitorId = localStorage.getItem('fiq_visitor_uuid');
   let selectedFile = null;
+  let selectedFileHash = null;
   let processedBase64 = null;
   let processedMimeType = null;
   let processedFileName = null;
@@ -66,6 +68,20 @@ document.addEventListener('DOMContentLoaded', () => {
     visitorId = 'fiq_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
     localStorage.setItem('fiq_visitor_uuid', visitorId);
   }
+
+  // Mapeo conocido de identificadores de archivo idénticos (mismo contenido en Drive) para deduplicación
+  const KNOWN_DUPLICATE_FILES = {
+    '1UYujcxBLozSbLTowe-XWEkxc-3usxlps': '1kcNqtJHVEQ7U7zQreR88YNrE0-cQ0t6b'
+  };
+
+  // Hashes SHA-256 conocidos de archivos multimedia ya subidos para detección instantánea de duplicados
+  const KNOWN_MEDIA_HASHES = {
+    'efccfabcc92b7c18c958ba7ab485f9539b0171a5b264e899db93f849e0907366': {
+      canonicalFileId: '1kcNqtJHVEQ7U7zQreR88YNrE0-cQ0t6b',
+      autor: 'Karito❤️',
+      titulo: 'Hasta en al ultima practica se nos fue el mentado imaaaaan🤡🫠'
+    }
+  };
 
   // Lista local de likes del usuario en este navegador
   let likedPostsLocal = JSON.parse(localStorage.getItem('fiq_liked_posts') || '[]');
@@ -244,8 +260,43 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /* ------------------------------------------------------------------------
-     2. OBTENCIÓN DE IDENTIFICADOR / IP PÚBLICA
+     2. OBTENCIÓN DE IDENTIFICADOR / HUELLA DIGITAL DE DISPOSITIVO E IP
+     Garantiza que usuarios en la misma red Wi-Fi universitaria (BUAP) tengan
+     identidades independientes y no colisionen en reacciones ni cuotas.
      ------------------------------------------------------------------------ */
+  const generateDeviceFingerprint = async () => {
+    try {
+      const screenInfo = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Mexico_City';
+      const languages = (navigator.languages || [navigator.language || 'es-MX']).join(',');
+      const platform = navigator.platform || '';
+      const hardwareConcurrency = navigator.hardwareConcurrency || 4;
+
+      let canvasData = '';
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 40;
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#6B7A66';
+        ctx.fillRect(0, 0, 80, 40);
+        ctx.fillStyle = '#2C3527';
+        ctx.fillText('FIQ-BUAP-2027', 2, 2);
+        canvasData = canvas.toDataURL().slice(-32);
+      } catch (_) {}
+
+      const raw = [userIp || '0.0.0.0', visitorId, screenInfo, timeZone, languages, platform, hardwareConcurrency, canvasData].join('|');
+      const msgBuffer = new TextEncoder().encode(raw);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return 'fp_' + hashArray.map(b => b.toString(16).padStart(2, '0')).slice(0, 16).join('');
+    } catch (_) {
+      return visitorId || ('fp_' + Math.random().toString(36).substring(2, 10));
+    }
+  };
+
   const fetchUserIp = async () => {
     const endpoints = [
       'https://api.ipify.org?format=json',
@@ -273,10 +324,90 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!userIp) {
       userIp = visitorId;
     }
+
+    // Generar huella digital de dispositivo combinada con IP
+    userFingerprint = await generateDeviceFingerprint();
+    localStorage.setItem('fiq_device_fingerprint', userFingerprint);
   };
 
   /* ------------------------------------------------------------------------
-     3. CARGA DE PUBLICACIONES (LOCAL PRIMERO + SINCRONIZACIÓN REMOTA)
+     3. MOTOR DE DEDUPLICACIÓN INTELIGENTE DE RECUERDOS (FOTOS Y VIDEOS)
+     Evita que un mismo video o foto aparezca dos veces, unificando votos y emojis
+     ------------------------------------------------------------------------ */
+  const deduplicatePosts = (rawPosts) => {
+    if (!Array.isArray(rawPosts)) return [];
+    const map = new Map();
+
+    rawPosts.forEach((p) => {
+      if (!p || isTestPost(p)) return;
+
+      // Obtener clave canónica del archivo multimedia
+      let mediaKey = String(p.fileId || p.id || '');
+      if (KNOWN_DUPLICATE_FILES[mediaKey]) {
+        mediaKey = KNOWN_DUPLICATE_FILES[mediaKey];
+      }
+      if (p.url && KNOWN_DUPLICATE_FILES[p.url]) {
+        mediaKey = KNOWN_DUPLICATE_FILES[p.url];
+      }
+
+      // Si no tiene fileId único, crear clave por autor + título normalizado
+      if (!mediaKey || mediaKey === 'uploaded-local') {
+        const normAuthor = String(p.autor || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normTitle = String(p.titulo || '').toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 30);
+        mediaKey = `${normAuthor}_${p.categoria || ''}_${normTitle}`;
+      }
+
+      if (map.has(mediaKey)) {
+        const existing = map.get(mediaKey);
+
+        // Elegir el post más reciente como el principal
+        const dateNew = new Date(p.fecha || 0).getTime();
+        const dateOld = new Date(existing.fecha || 0).getTime();
+        const primary = (dateNew >= dateOld) ? { ...p } : { ...existing };
+        const secondary = (dateNew >= dateOld) ? existing : p;
+
+        // Combinar reacciones de forma limpia
+        const mergedReactions = { ...(secondary.reactions || {}) };
+        Object.entries(primary.reactions || {}).forEach(([emoji, count]) => {
+          mergedReactions[emoji] = (mergedReactions[emoji] || 0) + count;
+        });
+
+        // Combinar IPs que reaccionaron
+        const ipsSet = new Set([
+          ...(Array.isArray(primary.ips_likes) ? primary.ips_likes : []),
+          ...(Array.isArray(secondary.ips_likes) ? secondary.ips_likes : [])
+        ]);
+
+        const combinedTotalLikes = Math.max(
+          Number(primary.likes) || 0,
+          Number(secondary.likes) || 0,
+          ipsSet.size,
+          Object.values(mergedReactions).reduce((sum, c) => sum + c, 0)
+        );
+
+        primary.reactions = mergedReactions;
+        primary.ips_likes = Array.from(ipsSet);
+        primary.likes = combinedTotalLikes;
+
+        // Vincular reacciones de ambos registros al usuario local
+        if (userReactionsMap[secondary.id] && !userReactionsMap[primary.id]) {
+          userReactionsMap[primary.id] = userReactionsMap[secondary.id];
+        }
+        if (secondary.fileId && userReactionsMap[secondary.fileId] && primary.fileId) {
+          userReactionsMap[primary.fileId] = userReactionsMap[secondary.fileId];
+        }
+
+        map.set(mediaKey, primary);
+      } else {
+        map.set(mediaKey, { ...p });
+      }
+    });
+
+    return Array.from(map.values());
+  };
+
+  /* ------------------------------------------------------------------------
+     4. CARGA DE PUBLICACIONES (LOCAL PRIMERO + SINCRONIZACIÓN REMOTA)
      ------------------------------------------------------------------------ */
   const loadPosts = async () => {
     if (boardLoading) boardLoading.style.display = 'flex';
@@ -285,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Cargar recuerdos guardados localmente de inmediato (persistencia garantizada)
     const localPosts = (await getLocalMemories()).filter(p => !isTestPost(p));
     if (localPosts.length > 0) {
-      posts = [...localPosts];
+      posts = deduplicatePosts([...localPosts]);
       if (boardLoading) boardLoading.style.display = 'none';
       renderBoard();
     }
@@ -317,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
             remotePosts = remotePosts.filter(p => !isTestPost(p));
 
             // Asegurar que fileId y reacciones se normalicen correctamente
-            const myIdentifier = userIp || visitorId;
+            const myIdentifier = userFingerprint || userIp || visitorId;
             remotePosts.forEach((rp) => {
               // Si fileId es el ID interno mem_..., usar el ID de Drive que está en url
               if (rp.url && (!rp.fileId || String(rp.fileId).startsWith('mem-') || rp.fileId === rp.id)) {
@@ -356,7 +487,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     id: rp.id,
                     fileId: rp.fileId,
                     emoji: localChoice,
-                    ip: myIdentifier
+                    ip: userIp || myIdentifier,
+                    fingerprint: userFingerprint || myIdentifier
                   })
                 }).catch(() => {});
               }
@@ -371,11 +503,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const alreadyRemote = remoteIds.has(String(lp.fileId)) || remoteIds.has(String(lp.id));
                 if (!alreadyRemote) {
                   merged.unshift(lp);
+                } else {
+                  // Si ya existe en la nube, limpiar respaldo local temporal huérfano
+                  deleteLocalMemory(lp.id);
                 }
               }
             });
 
-            posts = merged.filter(p => !isTestPost(p));
+            // Aplicar deduplicación inteligente y consolidación
+            posts = deduplicatePosts(merged.filter(p => !isTestPost(p)));
             // Sincronizar en segundo plano recuerdos pendientes guardados localmente
             syncPendingLocalPosts();
           }
@@ -803,7 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? [...post.ips_likes] 
       : (post.ips_likes ? String(post.ips_likes).split(',').map(s => s.trim()).filter(Boolean) : []);
     
-    const currentMyId = userIp || visitorId;
+    const currentMyId = userFingerprint || userIp || visitorId;
     const ipAlreadyRegistered = currentMyId && post.ips_likes.includes(currentMyId);
 
     if (prevEmoji) {
@@ -879,7 +1015,8 @@ document.addEventListener('DOMContentLoaded', () => {
           id: post.id,
           fileId: post.fileId,
           emoji: emoji,
-          ip: userIp || visitorId
+          ip: userIp || visitorId,
+          fingerprint: userFingerprint || visitorId
         })
       });
       if (resp.ok) {
@@ -1090,11 +1227,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Clave de API protegida en base64 para evitar detecciones de Git Push Protection
     const GEMINI_DIRECT_KEY = atob('QVEuQWI4Uk42Smc3TVBFQ0N6ZHVYeDR4UlNUaGhpdmVPVkNDZkhzekZaM1ZpU2Etb1FTUEE=');
-    const AVAILABLE_MODELS = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
+    // Modelos ordenados por disponibilidad activa, velocidad y estabilidad verificada
+    const AVAILABLE_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-flash-lite-latest'];
 
-    // 1. Escudo Primario: Llamada directa a Gemini Vision AI con tolerancia a fallos multi-modelo
+    // 1. Escudo Primario: Llamada directa a Gemini Vision AI con tolerancia a fallos multi-modelo y timeout
     for (const modelName of AVAILABLE_MODELS) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s máx por modelo
         const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
         const geminiBody = {
           contents: [{
@@ -1132,8 +1272,10 @@ document.addEventListener('DOMContentLoaded', () => {
             'Content-Type': 'application/json',
             'x-goog-api-key': GEMINI_DIRECT_KEY
           },
-          body: JSON.stringify(geminiBody)
+          body: JSON.stringify(geminiBody),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (directRes.ok) {
           const directData = await directRes.json();
@@ -1168,12 +1310,14 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       } catch (directErr) {
-        console.warn(`Escudo de Gemini (${modelName}) falló, probando alternativa...`, directErr);
+        console.warn(`Escudo de Gemini (${modelName}) falló o tardó demasiado, probando alternativa...`, directErr);
       }
     }
 
     // 2. Escudo Secundario: Google Apps Script Backend (si está activo el endpoint)
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 9000);
       const res = await fetch(SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1182,8 +1326,10 @@ document.addEventListener('DOMContentLoaded', () => {
           image: cleanB64,
           mimeType: cleanMime,
           context: extraContext
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       if (res.ok) {
         const parsed = await res.json();
@@ -1285,6 +1431,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (banner) banner.style.display = 'none';
   };
 
+  /* Helper criptográfico para calcular la huella digital SHA-256 de un archivo binario */
+  const computeFileHash = async (file) => {
+    try {
+      const buffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+      console.warn('No se pudo calcular hash criptográfico del archivo:', e);
+      return null;
+    }
+  };
+
   const handleSelectedFile = async (file) => {
     if (!file) return;
 
@@ -1331,6 +1490,40 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('⚠️ El video supera los 35 MB permitidos. Por favor elige un clip más corto.');
       clearFileSelection();
       return;
+    }
+
+    // 4. Detección proactiva de archivos duplicados (Huella digital criptográfica SHA-256)
+    selectedFileHash = await computeFileHash(file);
+    if (selectedFileHash) {
+      // a) Verificar contra catálogo conocido de recuerdos ya subidos
+      const knownMatch = KNOWN_MEDIA_HASHES[selectedFileHash];
+      if (knownMatch) {
+        showModerationAlert(
+          '⚠️ Este recuerdo ya fue compartido',
+          `Esta foto o video ya fue publicado en el muro por "${knownMatch.autor}" ("${knownMatch.titulo}"). Para mantener la variedad en nuestra bitácora universitaria y evitar repeticiones, no es necesario volver a subirlo.`
+        );
+        showToast('⚠️ Este recuerdo ya existe en el muro.');
+        clearFileSelection();
+        return;
+      }
+
+      // b) Verificar contra recuerdos actualmente cargados en el tablero
+      const duplicatePost = posts.find(p => {
+        if (!p) return false;
+        if (p.fileHash && p.fileHash === selectedFileHash) return true;
+        if (p.fileName === file.name && p.fileSize === file.size && file.size > 0) return true;
+        return false;
+      });
+
+      if (duplicatePost) {
+        showModerationAlert(
+          '⚠️ Este recuerdo ya fue compartido',
+          `Esta foto o video ya fue publicado en el muro por "${duplicatePost.autor || 'un compañero'}". Para evitar contenido repetido, no es necesario subirlo dos veces.`
+        );
+        showToast('⚠️ Este recuerdo ya existe en el muro.');
+        clearFileSelection();
+        return;
+      }
     }
 
     selectedFile = file;
@@ -1665,13 +1858,16 @@ document.addEventListener('DOMContentLoaded', () => {
         titulo: titulo,
         categoria: categoria,
         fileId: 'uploaded-local',
+        fileHash: selectedFileHash || '',
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
         mimeType: processedMimeType || selectedFile.type,
         urlFallback: localUrl,
         blob: selectedFile, // Guardado físicamente en IndexedDB: NUNCA se borra al recargar
         fecha: new Date().toISOString(),
         likes: 1,
         reactions: { '❤️': 1 },
-        ips_likes: [userIp || visitorId]
+        ips_likes: [userFingerprint || userIp || visitorId]
       };
 
       userReactionsMap[localId] = '❤️';
@@ -1680,8 +1876,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Guardar en base de datos local
       await saveLocalMemory(newPost);
 
-      // Renderizar inmediatamente en la pantalla del usuario
+      // Renderizar inmediatamente en la pantalla del usuario (deduplicando)
       posts.unshift(newPost);
+      posts = deduplicatePosts(posts);
       renderBoard();
 
       // 3. Sincronización con Google Apps Script y Google Drive
@@ -1698,7 +1895,9 @@ document.addEventListener('DOMContentLoaded', () => {
           mimeType: processedMimeType || selectedFile.type,
           base64: processedBase64,
           fileData: processedBase64,
-          ip: userIp || visitorId
+          ip: userIp || visitorId,
+          fingerprint: userFingerprint || visitorId,
+          fileHash: selectedFileHash || ''
         };
 
         try {
@@ -1716,13 +1915,23 @@ document.addEventListener('DOMContentLoaded', () => {
               const resData = JSON.parse(resText);
               if (resData && (resData.fileId || resData.success)) {
                 cloudSynced = true;
-                if (resData.fileId) {
-                  newPost.fileId = resData.fileId;
-                  if (resData.id) newPost.id = resData.id;
-                  await updateLocalMemory(newPost.id, { fileId: resData.fileId });
-                  console.log('Sincronizado con Google Drive exitosamente:', resData.fileId);
-                  renderBoard();
-                }
+                const cloudId = resData.id || localId;
+                const cloudFileId = resData.fileId || 'uploaded-cloud';
+
+                // Reemplazar limpiamente el registro provisional por el definitivo en IndexedDB
+                await deleteLocalMemory(localId);
+                newPost.id = cloudId;
+                newPost.fileId = cloudFileId;
+                newPost.fileHash = selectedFileHash || '';
+                await saveLocalMemory(newPost);
+
+                userReactionsMap[cloudId] = '❤️';
+                userReactionsMap[cloudFileId] = '❤️';
+                localStorage.setItem('fiq_user_reactions_map', JSON.stringify(userReactionsMap));
+
+                console.log('Sincronizado con Google Drive exitosamente:', cloudFileId);
+                posts = deduplicatePosts(posts);
+                renderBoard();
               } else if (resData && resData.error) {
                 cloudError = resData.error;
                 console.warn('Error devuelto por Apps Script:', resData.error);
@@ -2223,6 +2432,7 @@ document.addEventListener('DOMContentLoaded', () => {
           action: 'report',
           id: postId,
           ip: userIp || visitorId,
+          fingerprint: userFingerprint || visitorId,
           timestamp: now,
           reason: 'inappropriate_content'
         })
